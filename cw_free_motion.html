@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free-motion trajectories — CW relative orbit explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#13294B;
+    --orange:#E84A27;
+    --slate:#5B6B80;
+    --tint:#F3F6FA;
+    --grid:#DCE3EC;
+    --rule:#C9D2DE;
+    --white:#FFFFFF;
+    --font:"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--white);color:var(--navy);font-family:var(--font);font-size:15px;line-height:1.45}
+  body{display:flex;flex-direction:column;min-height:100vh}
+
+  header{padding:18px 24px 10px;display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 24px;border-bottom:1px solid var(--rule)}
+  header h1{font-size:22px;font-weight:600;margin:0;letter-spacing:-0.01em}
+  header p{margin:0;color:var(--slate);font-size:14px}
+
+  main{flex:1;display:grid;grid-template-columns:300px 1fr;min-height:0}
+  @media (max-width:820px){ main{grid-template-columns:1fr;min-height:auto} section.plot{min-height:auto} .canvas-wrap{flex:none;height:58vh;min-height:320px} }
+
+  aside{padding:18px 20px 24px;border-right:1px solid var(--rule);background:var(--tint);overflow:auto}
+  @media (max-width:820px){ aside{border-right:0;border-top:1px solid var(--rule);order:2} }
+
+  h2{font-size:13px;font-weight:600;margin:12px 0 6px;color:var(--slate)}
+  h2:first-child{margin-top:0}
+
+  .cases{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+  button{font:inherit;color:var(--navy);background:var(--white);border:1px solid var(--rule);border-radius:4px;padding:5px 10px;cursor:pointer}
+  button:hover{border-color:var(--navy)}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+  button.primary{background:var(--navy);color:var(--white);border-color:var(--navy)}
+  button.primary:hover{background:#0e1f39}
+  button.accent{border-color:var(--orange);color:var(--orange)}
+  button.accent:hover{background:var(--orange);color:var(--white)}
+  button[aria-pressed="true"]{background:var(--navy);color:var(--white);border-color:var(--navy)}
+
+  .field{display:grid;grid-template-columns:40px 1fr 74px;align-items:center;gap:8px;margin:5px 0}
+  .field label{font-style:italic;font-size:15px}
+  .field label sub{font-style:normal;font-size:11px}
+  .field input[type=range]{width:100%;accent-color:var(--navy)}
+  .field input[type=number]{width:100%;font:inherit;font-size:14px;padding:4px 6px;border:1px solid var(--rule);border-radius:4px;color:var(--navy);background:var(--white)}
+  .field .unit{grid-column:2;font-size:12px;color:var(--slate);margin-top:-6px}
+
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0}
+  .row label{display:block;font-size:13px;color:var(--slate);margin-bottom:3px}
+  .row input{width:100%;font:inherit;font-size:14px;padding:4px 6px;border:1px solid var(--rule);border-radius:4px;color:var(--navy);background:var(--white)}
+
+  .readout{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:14px;margin-top:4px}
+  .readout dt{font-style:italic;color:var(--slate)}
+  .readout dt sub{font-style:normal;font-size:11px}
+  .readout dd{margin:0;font-variant-numeric:tabular-nums}
+  .verdict{margin:10px 0 4px;padding:8px 10px;border-left:3px solid var(--navy);background:var(--white);font-size:14px}
+  .verdict.closed{border-left-color:var(--orange)}
+  .verdict strong{font-weight:600}
+  .hint{font-size:13px;color:var(--slate);margin:8px 0 0}
+
+  section.plot{display:flex;flex-direction:column;min-height:0}
+  .canvas-wrap{flex:1;position:relative;min-height:420px}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+  .playbar{display:flex;align-items:center;gap:12px;padding:10px 20px 14px;border-top:1px solid var(--rule);flex-wrap:wrap}
+  .playbar input[type=range]{flex:1;min-width:160px;accent-color:var(--orange)}
+  .playbar .t{font-variant-numeric:tabular-nums;min-width:190px;font-size:14px}
+  .playbar label.check{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--slate)}
+  .playbar label.check input{accent-color:var(--navy)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Free-motion trajectories</h1>
+  <p>Clohessy–Wiltshire relative motion, in plane. Enter the chaser's initial state relative to the target and see the resulting trajectory. Period is 1.5 h unless you change it.</p>
+</header>
+
+<main>
+  <aside>
+    <h2>Start from a case</h2>
+    <div class="cases" id="cases"></div>
+
+    <h2>Initial conditions</h2>
+    <p class="hint" style="margin:0 0 6px">Position in m (<i>x</i> radial, <i>y</i> along-track); velocity in m/s.</p>
+    <div class="field">
+      <label for="x0">x<sub>0</sub></label>
+      <input type="range" id="x0r" min="-600" max="600" step="1">
+      <input type="number" id="x0" step="1">
+    </div>
+    <div class="field">
+      <label for="y0">y<sub>0</sub></label>
+      <input type="range" id="y0r" min="-600" max="600" step="1">
+      <input type="number" id="y0" step="1">
+    </div>
+    <div class="field">
+      <label for="xd0">ẋ<sub>0</sub></label>
+      <input type="range" id="xd0r" min="-1" max="1" step="0.01">
+      <input type="number" id="xd0" step="0.01">
+    </div>
+    <div class="field">
+      <label for="yd0">ẏ<sub>0</sub></label>
+      <input type="range" id="yd0r" min="-1" max="1" step="0.01">
+      <input type="number" id="yd0" step="0.01">
+    </div>
+
+    <div class="row">
+      <div><label for="nin">Mean motion <i>n</i>, rad/s</label><input type="number" id="nin" min="1e-6" step="any"></div>
+      <div><label for="period">Orbit period, min</label><input type="number" id="period" min="1" max="20000" step="any" value="90"></div>
+    </div>
+    <p class="hint" style="margin:-2px 0 6px">Edit either; the other follows (<i>n</i> = 2π / period).</p>
+    <div class="row">
+      <div><label for="orbits">Orbits to show</label><input type="number" id="orbits" min="0.25" max="12" step="0.25" value="2"></div>
+      <div></div>
+    </div>
+
+    <button class="accent" id="closeBtn" style="margin-top:8px">Close the orbit</button>
+    <p class="hint" id="closeHint"></p>
+
+    <h2>What the trajectory is</h2>
+    <dl class="readout">
+      <dt>a<sub>1</sub></dt><dd id="a1"></dd>
+      <dt>a<sub>2</sub></dt><dd id="a2"></dd>
+      <dt>a<sub>3</sub></dt><dd id="a3"></dd>
+      <dt>drift</dt><dd id="drift"></dd>
+    </dl>
+    <div class="verdict" id="verdict"></div>
+  </aside>
+
+  <section class="plot">
+    <div class="canvas-wrap"><canvas id="c"></canvas></div>
+    <div class="playbar">
+      <button class="primary" id="play" aria-pressed="false">Play</button>
+      <input type="range" id="time" min="0" max="1" step="0.001" value="0" aria-label="Time">
+      <span class="t" id="tlabel"></span>
+      <label class="check"><input type="checkbox" id="showEll" checked> Show guide ellipse</label>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  // ---------- state ----------
+  // Feature switches. SHOW_CLOSE_BUTTON adds a "Close the orbit" button that sets yd0 = -2 n x0 (gives away the closure condition).
+  const SHOW_CASES = true;
+  const SHOW_CLOSE_BUTTON = false;
+  const state = { x0:0, y0:0, xd0:0, yd0:0, period:90, orbits:2, tau:0, playing:false, showEll:true };
+  const cases = [
+    {x0:0,    y0:100,  xd0:0,     yd0:0},        // stationary hold, 100 m ahead
+    {x0:300,  y0:0,    xd0:0,     yd0:-0.698},   // ellipse centred on the target
+    {x0:150,  y0:600,  xd0:0,     yd0:-0.349},   // leading ellipse, 300-900 m ahead
+    {x0:0,    y0:-300, xd0:0.116, yd0:0},        // trailing ellipse, 300-700 m behind
+    {x0:0,    y0:0,    xd0:0.3,   yd0:0},        // radial push, ellipse through the target
+    {x0:200,  y0:0,    xd0:0,     yd0:0},        // unbounded, drifts back 7.5 km per orbit
+  ];
+
+  const $ = id => document.getElementById(id);
+  const canvas = $('c'), ctx = canvas.getContext('2d');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- physics ----------
+  const n = () => 2*Math.PI/(state.period*60);
+  function cw(t){
+    const N=n(), c=Math.cos(N*t), s=Math.sin(N*t);
+    const {x0,y0,xd0,yd0}=state;
+    const x=(4-3*c)*x0 + (s/N)*xd0 + (2/N)*(1-c)*yd0;
+    const y=6*(s-N*t)*x0 + y0 - (2/N)*(1-c)*xd0 + ((4*s-3*N*t)/N)*yd0;
+    return [x,y];
+  }
+  function params(){
+    const N=n(); const {x0,y0,xd0,yd0}=state;
+    return { a1:y0-2*xd0/N, a2:2*x0+yd0/N, a3:Math.hypot(2*yd0/N+3*x0, xd0/N), N };
+  }
+  const center = (p,t) => [2*p.a2, p.a1-3*p.a2*p.N*t];
+
+  // ---------- trajectory cache ----------
+  let path=[], bounds=null, P=null;
+  function recompute(){
+    P=params();
+    const T=state.orbits*state.period*60, steps=Math.max(200, Math.round(600*state.orbits));
+    path=[]; let minX=0,maxX=0,minY=0,maxY=0;
+    for(let i=0;i<=steps;i++){
+      const t=T*i/steps, [x,y]=cw(t); path.push([x,y,t]);
+      if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y;
+    }
+    // include guide ellipse extent at t=0 and t=T so it never falls off-screen
+    if(P.a3>0){
+      for(const t of [0,T]){ const [cx,cy]=center(P,t);
+        minX=Math.min(minX,cx-P.a3); maxX=Math.max(maxX,cx+P.a3);
+        minY=Math.min(minY,cy-2*P.a3); maxY=Math.max(maxY,cy+2*P.a3); }
+    }
+    const padX=Math.max((maxX-minX)*0.15, 40), padY=Math.max((maxY-minY)*0.12, 40);
+    bounds={minX:minX-padX,maxX:maxX+padX,minY:minY-padY,maxY:maxY+padY};
+    updateReadouts(); draw();
+  }
+
+  // ---------- readouts ----------
+  const fm = (v,d=1) => (Math.abs(v)<1e-9?0:v).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d});
+  function updateReadouts(){
+    $('a1').textContent=fm(P.a1)+' m';
+    $('a2').textContent=fm(P.a2)+' m';
+    $('a3').textContent=fm(P.a3)+' m';
+    const perOrbit=-6*Math.PI*P.a2;
+    $('drift').textContent=(Math.abs(P.a2)<0.5?'none':fm(perOrbit,0)+' m per orbit along y');
+    const closedYd=-2*P.N*state.x0;
+    if($('closeHint')) $('closeHint').textContent=`Closed when ẏ₀ = −2n·x₀ = ${fm(closedYd,3)} m/s`;
+    const v=$('verdict'); v.classList.remove('closed');
+    const a2z=Math.abs(P.a2)<0.5, a3z=P.a3<0.5;
+    if(a2z&&a3z){ v.innerHTML='<strong>Stationary.</strong> The chaser holds its position relative to the target.'; v.classList.add('closed'); }
+    else if(a3z){ v.innerHTML='<strong>Straight-line drift.</strong> No ellipse; the chaser slides along <i>y</i> at constant rate.'; }
+    else if(a2z){ v.innerHTML='<strong>Closed ellipse.</strong> <i>a</i><sub>2</sub> = 0, so the centre stays put. Semi-axes <i>a</i><sub>3</sub> (radial) and 2<i>a</i><sub>3</sub> (along-track).'; v.classList.add('closed'); }
+    else { v.innerHTML='<strong>Rolling ellipse.</strong> The centre drifts along <i>y</i> at 3<i>a</i><sub>2</sub><i>n</i>, so the ellipse never closes.'; }
+    const T=state.orbits*state.period*60, t=state.tau*T;
+    $('tlabel').textContent=`t = ${fm(state.tau*state.orbits,2)} orbits  (${fm(t/60,1)} min)`;
+  }
+
+  // ---------- drawing ----------
+  function niceStep(range){ const raw=range/6, p=Math.pow(10,Math.floor(Math.log10(raw))), m=raw/p; return p*(m<1.5?1:m<3.5?2:m<7.5?5:10); }
+  function draw(){
+    const dpr=window.devicePixelRatio||1, W=canvas.clientWidth, H=canvas.clientHeight;
+    if(canvas.width!==W*dpr||canvas.height!==H*dpr){ canvas.width=W*dpr; canvas.height=H*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+    if(!bounds) return;
+    const m={l:64,r:22,t:34,b:46};
+    const rx=bounds.maxX-bounds.minX, ry=bounds.maxY-bounds.minY;
+    const s=Math.min((W-m.l-m.r)/ry,(H-m.t-m.b)/rx);
+    const cx=(m.l+W-m.r)/2, cy=(m.t+H-m.b)/2, my=(bounds.minY+bounds.maxY)/2, mx=(bounds.minX+bounds.maxX)/2;
+    const X = y => cx+(y-my)*s;         // world y -> screen x
+    const Y = x => cy-(x-mx)*s;         // world x -> screen y
+    const T=state.orbits*state.period*60, tNow=state.tau*T;
+
+    // grid
+    const visYmin=my-(cx-m.l)/s, visYmax=my+(W-m.r-cx)/s, visXmin=mx-(H-m.b-cy)/s, visXmax=mx+(cy-m.t)/s;
+    const gy=niceStep(visYmax-visYmin), gx=niceStep(visXmax-visXmin), g=Math.max(gx,gy);
+    ctx.strokeStyle='#DCE3EC'; ctx.lineWidth=1; ctx.font='12px '+getComputedStyle(document.body).fontFamily; ctx.fillStyle='#5B6B80';
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    for(let v=Math.ceil(visYmin/g)*g; v<=visYmax; v+=g){ const px=X(v); ctx.beginPath(); ctx.moveTo(px,m.t); ctx.lineTo(px,H-m.b); ctx.stroke(); ctx.fillText(fm(v,0),px,H-m.b+6); }
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    for(let v=Math.ceil(visXmin/g)*g; v<=visXmax; v+=g){ const py=Y(v); ctx.beginPath(); ctx.moveTo(m.l,py); ctx.lineTo(W-m.r,py); ctx.stroke(); ctx.fillText(fm(v,0),m.l-8,py); }
+    // zero axes
+    ctx.strokeStyle='#C9D2DE'; ctx.lineWidth=1.2;
+    if(visYmin<0&&visYmax>0){ ctx.beginPath(); ctx.moveTo(X(0),m.t); ctx.lineTo(X(0),H-m.b); ctx.stroke(); }
+    if(visXmin<0&&visXmax>0){ ctx.beginPath(); ctx.moveTo(m.l,Y(0)); ctx.lineTo(W-m.r,Y(0)); ctx.stroke(); }
+    // axis titles
+    ctx.fillStyle='#13294B'; ctx.font='13px '+getComputedStyle(document.body).fontFamily;
+    ctx.textAlign='right'; ctx.textBaseline='bottom'; ctx.fillText('along-track  y (m)  →', W-m.r, H-6);
+    ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText('↑  radial  x (m), away from Earth', m.l, 10);
+
+    // centre's drift line and guide ellipse
+    if(state.showEll && P.a3>0.5){
+      const [ecx,ecy]=center(P,tNow), [c0x,c0y]=center(P,0), [c1x,c1y]=center(P,T);
+      ctx.strokeStyle='#A9B6C7'; ctx.setLineDash([2,5]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(X(c0y),Y(c0x)); ctx.lineTo(X(c1y),Y(c1x)); ctx.stroke();
+      ctx.strokeStyle='#5B6B80'; ctx.setLineDash([6,5]); ctx.lineWidth=1.3;
+      ctx.beginPath(); ctx.ellipse(X(ecy),Y(ecx),2*P.a3*s,P.a3*s,0,0,2*Math.PI); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='#5B6B80'; ctx.beginPath(); ctx.arc(X(ecy),Y(ecx),3,0,2*Math.PI); ctx.fill();
+      ctx.font='12px '+getComputedStyle(document.body).fontFamily; ctx.textAlign='left'; ctx.textBaseline='bottom';
+      ctx.fillText('centre', X(ecy)+6, Y(ecx)-4);
+    }
+
+    // full path (faint) then traversed path (solid)
+    ctx.lineWidth=1.5; ctx.strokeStyle='rgba(19,41,75,0.22)'; ctx.beginPath();
+    path.forEach((p,i)=> i?ctx.lineTo(X(p[1]),Y(p[0])):ctx.moveTo(X(p[1]),Y(p[0]))); ctx.stroke();
+    ctx.lineWidth=2.2; ctx.strokeStyle='#13294B'; ctx.beginPath(); let started=false;
+    for(const p of path){ if(p[2]>tNow) break; started?ctx.lineTo(X(p[1]),Y(p[0])):ctx.moveTo(X(p[1]),Y(p[0])); started=true; }
+    ctx.stroke();
+
+    // target at origin
+    ctx.strokeStyle='#13294B'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(X(0)-8,Y(0)); ctx.lineTo(X(0)+8,Y(0)); ctx.moveTo(X(0),Y(0)-8); ctx.lineTo(X(0),Y(0)+8); ctx.stroke();
+    ctx.beginPath(); ctx.arc(X(0),Y(0),4,0,2*Math.PI); ctx.stroke();
+    ctx.fillStyle='#13294B'; ctx.font='12px '+getComputedStyle(document.body).fontFamily; ctx.textAlign='left'; ctx.textBaseline='top';
+    ctx.fillText('target', X(0)+10, Y(0)+6);
+
+    // start marker
+    ctx.strokeStyle='#13294B'; ctx.lineWidth=1.5; ctx.fillStyle='#FFFFFF';
+    ctx.beginPath(); ctx.arc(X(state.y0),Y(state.x0),4.5,0,2*Math.PI); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#13294B'; ctx.textAlign='left'; ctx.textBaseline='bottom'; ctx.fillText('t = 0', X(state.y0)+8, Y(state.x0)-6);
+
+    // chaser
+    const [px,py]=cw(tNow);
+    ctx.fillStyle='#FFFFFF'; ctx.beginPath(); ctx.arc(X(py),Y(px),8,0,2*Math.PI); ctx.fill();
+    ctx.fillStyle='#E84A27'; ctx.beginPath(); ctx.arc(X(py),Y(px),6,0,2*Math.PI); ctx.fill();
+  }
+
+  // ---------- animation ----------
+  let last=null;
+  function frame(ts){
+    if(!state.playing) return;
+    if(last!=null){ const dt=(ts-last)/1000; state.tau=(state.tau + dt/(6*state.orbits))%1; $('time').value=state.tau; updateReadouts(); draw(); }
+    last=ts; requestAnimationFrame(frame);
+  }
+  function setPlaying(p){
+    state.playing=p; last=null; const b=$('play'); b.textContent=p?'Pause':'Play'; b.setAttribute('aria-pressed',p);
+    if(p) requestAnimationFrame(frame);
+  }
+
+  // ---------- inputs ----------
+  function bind(key){
+    const num=$(key), rng=$(key+'r');
+    const push=v=>{ state[key]=v; num.value=v; rng.value=v; recompute(); };
+    num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)) push(v); });
+    rng.addEventListener('input', ()=>push(parseFloat(rng.value)));
+  }
+  ['x0','y0','xd0','yd0'].forEach(bind);
+  const syncN=()=>{ $('nin').value=Number(n().toPrecision(4)); };
+  $('period').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=v; syncN(); recompute(); } });
+  $('nin').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=2*Math.PI/v/60; $('period').value=Number(state.period.toPrecision(5)); recompute(); } });
+  syncN();
+  $('orbits').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.orbits=v; recompute(); } });
+  $('time').addEventListener('input', e=>{ state.tau=parseFloat(e.target.value); updateReadouts(); draw(); });
+  $('showEll').addEventListener('change', e=>{ state.showEll=e.target.checked; draw(); });
+  $('play').addEventListener('click', ()=>setPlaying(!state.playing));
+  $('closeBtn').addEventListener('click', ()=>{ const v=Math.round(-2*n()*state.x0*1e5)/1e5; state.yd0=v; $('yd0').value=v; $('yd0r').value=v; recompute(); });
+
+  function loadCase(i){
+    Object.assign(state, cases[i]); state.tau=0; $('time').value=0;
+    ['x0','y0','xd0','yd0'].forEach(k=>{ $(k).value=state[k]; $(k+'r').value=state[k]; });
+    document.querySelectorAll('#cases button').forEach((b,j)=>b.setAttribute('aria-pressed', j===i));
+    recompute();
+  }
+  if(SHOW_CASES){
+    cases.forEach((c,i)=>{ const b=document.createElement('button'); b.textContent='Case '+(i+1); b.addEventListener('click',()=>loadCase(i)); $('cases').appendChild(b); });
+  } else {
+    $('cases').previousElementSibling.remove(); $('cases').remove();
+  }
+  if(!SHOW_CLOSE_BUTTON){ $('closeBtn').remove(); $('closeHint').remove(); }
+
+  new ResizeObserver(draw).observe(canvas.parentElement);
+  if(SHOW_CASES){ loadCase(0); } else { ['x0','y0','xd0','yd0'].forEach(k=>{ $(k).value=state[k]; $(k+'r').value=state[k]; }); recompute(); }
+  if(!reduce) setPlaying(true);
+})();
+</script>
+</body>
+</html>
