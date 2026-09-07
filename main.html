@@ -92,22 +92,22 @@
     <div class="field">
       <label for="x0">x<sub>0</sub></label>
       <input type="range" id="x0r" min="-600" max="600" step="1">
-      <input type="number" id="x0" step="1">
+      <input type="number" id="x0" step="any">
     </div>
     <div class="field">
       <label for="y0">y<sub>0</sub></label>
       <input type="range" id="y0r" min="-600" max="600" step="1">
-      <input type="number" id="y0" step="1">
+      <input type="number" id="y0" step="any">
     </div>
     <div class="field">
       <label for="xd0">ẋ<sub>0</sub></label>
       <input type="range" id="xd0r" min="-1" max="1" step="0.01">
-      <input type="number" id="xd0" step="0.01">
+      <input type="number" id="xd0" step="any">
     </div>
     <div class="field">
       <label for="yd0">ẏ<sub>0</sub></label>
       <input type="range" id="yd0r" min="-1" max="1" step="0.01">
-      <input type="number" id="yd0" step="0.01">
+      <input type="number" id="yd0" step="any">
     </div>
 
     <div class="row">
@@ -305,9 +305,8 @@
   // ---------- inputs ----------
   function bind(key){
     const num=$(key), rng=$(key+'r');
-    const push=v=>{ state[key]=v; num.value=v; rng.value=v; recompute(); };
-    num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)) push(v); });
-    rng.addEventListener('input', ()=>push(parseFloat(rng.value)));
+    num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)){ state[key]=v; rng.value=v; recompute(); } });
+    rng.addEventListener('input', ()=>{ const v=parseFloat(rng.value); state[key]=v; num.value=v; recompute(); });
   }
   ['x0','y0','xd0','yd0'].forEach(bind);
   const syncN=()=>{ $('nin').value=Number(n().toPrecision(4)); };
