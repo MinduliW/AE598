@@ -7,127 +7,129 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --navy:#13294B;
-    --orange:#E84A27;
-    --slate:#5B6B80;
-    --tint:#F3F6FA;
-    --grid:#DCE3EC;
-    --rule:#C9D2DE;
-    --white:#FFFFFF;
-    --font:"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
-  }
+  :root{ --navy:#13294B; --orange:#E84A27; --slate:#5B6B80; --tint:#F3F6FA; --grid:#DCE3EC; --rule:#C9D2DE; --white:#FFFFFF;
+         --font:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif; }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:var(--white);color:var(--navy);font-family:var(--font);font-size:15px;line-height:1.45}
   body{display:flex;flex-direction:column;min-height:100vh}
-
-  header{padding:18px 24px 10px;display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 24px;border-bottom:1px solid var(--rule)}
+  header{padding:16px 24px 10px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 24px;border-bottom:1px solid var(--rule)}
   header h1{font-size:22px;font-weight:600;margin:0;letter-spacing:-0.01em}
   header p{margin:0;color:var(--slate);font-size:14px}
-
-  main{flex:1;display:grid;grid-template-columns:300px 1fr;min-height:0}
-  @media (max-width:820px){ main{grid-template-columns:1fr;min-height:auto} section.plot{min-height:auto} .canvas-wrap{flex:none;height:58vh;min-height:320px} }
-
-  aside{padding:18px 20px 24px;border-right:1px solid var(--rule);background:var(--tint);overflow:auto}
-  @media (max-width:820px){ aside{border-right:0;border-top:1px solid var(--rule);order:2} }
-
+  main{flex:1;display:grid;grid-template-columns:330px 1fr;min-height:0}
+  @media (max-width:860px){ main{grid-template-columns:1fr;min-height:auto} section.plot{min-height:auto} .canvas-wrap{flex:none;height:62vh;min-height:340px} }
+  aside{padding:14px 18px 24px;border-right:1px solid var(--rule);background:var(--tint);overflow:auto}
+  @media (max-width:860px){ aside{border-right:0;border-top:1px solid var(--rule);order:2} }
   h2{font-size:13px;font-weight:600;margin:12px 0 6px;color:var(--slate)}
   h2:first-child{margin-top:0}
-
-  .cases{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+  .seg{display:flex;gap:0;margin-bottom:4px}
+  .seg button{flex:1;border-radius:0}
+  .seg button:first-child{border-radius:4px 0 0 4px}
+  .seg button:last-child{border-radius:0 4px 4px 0;margin-left:-1px}
+  .cases{display:flex;flex-wrap:wrap;gap:6px}
   button{font:inherit;color:var(--navy);background:var(--white);border:1px solid var(--rule);border-radius:4px;padding:5px 10px;cursor:pointer}
   button:hover{border-color:var(--navy)}
   button:focus-visible,input:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
   button.primary{background:var(--navy);color:var(--white);border-color:var(--navy)}
-  button.primary:hover{background:#0e1f39}
   button.accent{border-color:var(--orange);color:var(--orange)}
   button.accent:hover{background:var(--orange);color:var(--white)}
   button[aria-pressed="true"]{background:var(--navy);color:var(--white);border-color:var(--navy)}
-
-  .field{display:grid;grid-template-columns:40px 1fr 74px;align-items:center;gap:8px;margin:5px 0}
-  .field label{font-style:italic;font-size:15px}
-  .field label sub{font-style:normal;font-size:11px}
-  .field input[type=range]{width:100%;accent-color:var(--navy)}
-  .field input[type=number]{width:100%;font:inherit;font-size:14px;padding:4px 6px;border:1px solid var(--rule);border-radius:4px;color:var(--navy);background:var(--white)}
-  .field .unit{grid-column:2;font-size:12px;color:var(--slate);margin-top:-6px}
-
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0}
-  .row label{display:block;font-size:13px;color:var(--slate);margin-bottom:3px}
-  .row input{width:100%;font:inherit;font-size:14px;padding:4px 6px;border:1px solid var(--rule);border-radius:4px;color:var(--navy);background:var(--white)}
-
-  .readout{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:14px;margin-top:4px}
+  .field{display:grid;grid-template-columns:40px 1fr 78px;align-items:center;gap:8px;margin:4px 0}
+  .field label,.g label{font-style:italic}
+  label sub{font-style:normal;font-size:11px}
+  input[type=range]{width:100%;accent-color:var(--navy)}
+  input[type=number]{width:100%;font:inherit;font-size:14px;padding:4px 6px;border:1px solid var(--rule);border-radius:4px;color:var(--navy);background:var(--white)}
+  .g{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin:4px 0}
+  .g label{display:block;font-size:13px;color:var(--slate);margin-bottom:2px}
+  .g label.u{font-style:normal}
+  .readout{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:14px}
   .readout dt{font-style:italic;color:var(--slate)}
-  .readout dt sub{font-style:normal;font-size:11px}
   .readout dd{margin:0;font-variant-numeric:tabular-nums}
   .verdict{margin:10px 0 4px;padding:8px 10px;border-left:3px solid var(--navy);background:var(--white);font-size:14px}
   .verdict.closed{border-left-color:var(--orange)}
-  .verdict strong{font-weight:600}
-  .hint{font-size:13px;color:var(--slate);margin:8px 0 0}
-
+  .hint{font-size:13px;color:var(--slate);margin:4px 0 0}
+  [hidden]{display:none !important}
   section.plot{display:flex;flex-direction:column;min-height:0}
   .canvas-wrap{flex:1;position:relative;min-height:420px}
   canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-
   .playbar{display:flex;align-items:center;gap:12px;padding:10px 20px 14px;border-top:1px solid var(--rule);flex-wrap:wrap}
   .playbar input[type=range]{flex:1;min-width:160px;accent-color:var(--orange)}
   .playbar .t{font-variant-numeric:tabular-nums;min-width:190px;font-size:14px}
   .playbar label.check{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--slate)}
-  .playbar label.check input{accent-color:var(--navy)}
 </style>
 </head>
 <body>
-
 <header>
   <h1>Free-motion trajectories</h1>
-  <p>Clohessy–Wiltshire relative motion, in plane. Enter the chaser's initial state relative to the target and see the resulting trajectory. Period is 1.5 h unless you change it.</p>
+  <p>Clohessy–Wiltshire relative motion about a circular target. Describe the chaser by its Hill-frame state or by orbit element differences, and see where it goes.</p>
 </header>
-
 <main>
   <aside>
-    <h2>Start from a case</h2>
+    <h2>Describe the chaser by</h2>
+    <div class="seg">
+      <button id="modeHill" aria-pressed="true">Hill-frame state</button>
+      <button id="modeElem" aria-pressed="false">Orbit element differences</button>
+    </div>
+
+    <h2 id="casesHead">Start from a case</h2>
     <div class="cases" id="cases"></div>
 
-    <h2>Initial conditions</h2>
-    <p class="hint" style="margin:0 0 6px">Position in m (<i>x</i> radial, <i>y</i> along-track); velocity in m/s.</p>
-    <div class="field">
-      <label for="x0">x<sub>0</sub></label>
-      <input type="range" id="x0r" min="-600" max="600" step="1">
-      <input type="number" id="x0" step="any">
-    </div>
-    <div class="field">
-      <label for="y0">y<sub>0</sub></label>
-      <input type="range" id="y0r" min="-600" max="600" step="1">
-      <input type="number" id="y0" step="any">
-    </div>
-    <div class="field">
-      <label for="xd0">ẋ<sub>0</sub></label>
-      <input type="range" id="xd0r" min="-1" max="1" step="0.01">
-      <input type="number" id="xd0" step="any">
-    </div>
-    <div class="field">
-      <label for="yd0">ẏ<sub>0</sub></label>
-      <input type="range" id="yd0r" min="-1" max="1" step="0.01">
-      <input type="number" id="yd0" step="any">
+    <div id="hillFields">
+      <h2>Initial state</h2>
+      <p class="hint" style="margin:0 0 4px">Position in m (<i>x</i> radial, <i>y</i> along-track, <i>z</i> cross-track); velocity in m/s.</p>
+      <div class="field"><label for="x0">x<sub>0</sub></label><input type="range" id="x0r" min="-600" max="600" step="1"><input type="number" id="x0" step="any"></div>
+      <div class="field"><label for="y0">y<sub>0</sub></label><input type="range" id="y0r" min="-600" max="600" step="1"><input type="number" id="y0" step="any"></div>
+      <div class="field"><label for="z0">z<sub>0</sub></label><input type="range" id="z0r" min="-600" max="600" step="1"><input type="number" id="z0" step="any"></div>
+      <div class="field"><label for="xd0">ẋ<sub>0</sub></label><input type="range" id="xd0r" min="-1" max="1" step="0.01"><input type="number" id="xd0" step="any"></div>
+      <div class="field"><label for="yd0">ẏ<sub>0</sub></label><input type="range" id="yd0r" min="-1" max="1" step="0.01"><input type="number" id="yd0" step="any"></div>
+      <div class="field"><label for="zd0">ż<sub>0</sub></label><input type="range" id="zd0r" min="-1" max="1" step="0.01"><input type="number" id="zd0" step="any"></div>
+      <button class="accent" id="closeBtn" style="margin-top:6px">Close the orbit</button>
+      <p class="hint" id="closeHint"></p>
     </div>
 
-    <div class="row">
-      <div><label for="nin">Mean motion <i>n</i>, rad/s</label><input type="number" id="nin" min="1e-6" step="any"></div>
-      <div><label for="period">Orbit period, min</label><input type="number" id="period" min="1" max="20000" step="any" value="90"></div>
-    </div>
-    <p class="hint" style="margin:-2px 0 6px">Edit either; the other follows (<i>n</i> = 2π / period).</p>
-    <div class="row">
-      <div><label for="orbits">Orbits to show</label><input type="number" id="orbits" min="0.25" max="12" step="0.25" value="2"></div>
-      <div></div>
+    <div id="elemFields" hidden>
+      <h2>Differences δ<i>e</i> = <i>e</i><sub>C</sub> − <i>e</i><sub>T</sub></h2>
+      <div class="g">
+        <div><label for="da">Δ<i>a</i>, m</label><input type="number" id="da" step="any"></div>
+        <div><label for="dth">Δ<i>θ</i><sub>0</sub>, deg</label><input type="number" id="dth" step="any"></div>
+        <div><label for="di">Δ<i>i</i>, deg</label><input type="number" id="di" step="any"></div>
+        <div><label for="dW">ΔΩ, deg</label><input type="number" id="dW" step="any"></div>
+        <div><label for="dq1">Δ<i>q</i><sub>1</sub> = Δ(<i>e</i> cos <i>ω</i>)</label><input type="number" id="dq1" step="any"></div>
+        <div><label for="dq2">Δ<i>q</i><sub>2</sub> = Δ(<i>e</i> sin <i>ω</i>)</label><input type="number" id="dq2" step="any"></div>
+      </div>
+      <p class="hint">1 millidegree ≈ <span id="mdeg"></span> m along the orbit at this altitude.</p>
+      <button class="accent" id="centerBtn" style="margin-top:6px">Centre the formation</button>
+      <p class="hint" id="centerHint"></p>
     </div>
 
-    <button class="accent" id="closeBtn" style="margin-top:8px">Close the orbit</button>
-    <p class="hint" id="closeHint"></p>
+    <h2>Target orbit</h2>
+    <div class="g">
+      <div><label for="nin" class="u">Mean motion <i>n</i>, rad/s</label><input type="number" id="nin" step="any"></div>
+      <div><label for="period" class="u">Period, min</label><input type="number" id="period" step="any"></div>
+      <div><label for="sma" class="u">Semi-major axis <i>a</i>, km</label><input type="number" id="sma" step="any"></div>
+      <div><label for="orbits" class="u">Orbits to show</label><input type="number" id="orbits" min="0.25" max="12" step="0.25" value="2"></div>
+      <div><label for="inc" class="u">Inclination <i>i</i>, deg</label><input type="number" id="inc" step="any"></div>
+      <div><label for="th0" class="u">True latitude <i>θ</i><sub>0</sub> at <i>t</i> = 0, deg</label><input type="number" id="th0" step="any"></div>
+    </div>
+    <p class="hint">Edit any of <i>n</i>, period, or <i>a</i>; the others follow (<i>n</i>² <i>a</i>³ = μ). <i>i</i> and <i>θ</i><sub>0</sub> only matter for the element-difference description.</p>
+
+    <h2 id="eqHead">Same motion in element differences</h2>
+    <dl class="readout" id="elemEq">
+      <dt>Δa</dt><dd id="eqDa"></dd>
+      <dt>Δθ<sub>0</sub></dt><dd id="eqDth"></dd>
+      <dt>Δi, ΔΩ</dt><dd id="eqDiW"></dd>
+      <dt>Δq<sub>1</sub>, Δq<sub>2</sub></dt><dd id="eqDq"></dd>
+    </dl>
+    <dl class="readout" id="hillEq" hidden>
+      <dt>x<sub>0</sub>, y<sub>0</sub>, z<sub>0</sub></dt><dd id="eqPos"></dd>
+      <dt>ẋ<sub>0</sub>, ẏ<sub>0</sub>, ż<sub>0</sub></dt><dd id="eqVel"></dd>
+    </dl>
 
     <h2>What the trajectory is</h2>
     <dl class="readout">
       <dt>a<sub>1</sub></dt><dd id="a1"></dd>
       <dt>a<sub>2</sub></dt><dd id="a2"></dd>
       <dt>a<sub>3</sub></dt><dd id="a3"></dd>
+      <dt>z amp.</dt><dd id="zamp"></dd>
       <dt>drift</dt><dd id="drift"></dd>
     </dl>
     <div class="verdict" id="verdict"></div>
@@ -146,194 +148,262 @@
 
 <script>
 (() => {
-  // ---------- state ----------
-  // Feature switches. SHOW_CLOSE_BUTTON adds a "Close the orbit" button that sets yd0 = -2 n x0 (gives away the closure condition).
+  // ---------- feature switches ----------
   const SHOW_CASES = true;
-  const SHOW_CLOSE_BUTTON = false;
-  const state = { x0:0, y0:0, xd0:0, yd0:0, period:90, orbits:2, tau:0, playing:false, showEll:true };
-  const cases = [
-    {x0:0,    y0:100,  xd0:0,     yd0:0},        // stationary hold, 100 m ahead
-    {x0:300,  y0:0,    xd0:0,     yd0:-0.698},   // ellipse centred on the target
-    {x0:150,  y0:600,  xd0:0,     yd0:-0.349},   // leading ellipse, 300-900 m ahead
-    {x0:0,    y0:-300, xd0:0.116, yd0:0},        // trailing ellipse, 300-700 m behind
-    {x0:0,    y0:0,    xd0:0.3,   yd0:0},        // radial push, ellipse through the target
-    {x0:200,  y0:0,    xd0:0,     yd0:0},        // unbounded, drifts back 7.5 km per orbit
-  ];
+  const SHOW_CLOSE_BUTTON = false;   // Hill mode: sets yd0 = -2 n x0 (gives away the closure condition)
+  const SHOW_CENTER_BUTTON = false;  // Element mode: sets dth0 = -dW cos i (gives away the centred-formation condition)
 
+  const MU = 3.986004418e14;         // m^3/s^2
+  const d2r = Math.PI/180, r2d = 180/Math.PI;
   const $ = id => document.getElementById(id);
   const canvas = $('c'), ctx = canvas.getContext('2d');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ---------- physics ----------
+  // ---------- state ----------
+  // state.hill is authoritative in Hill mode; state.elem in element mode. The other is derived.
+  const state = {
+    mode:'hill', period:90, orbits:2, tau:0, playing:false, showEll:true,
+    tgt:{ inc:51.6, th0:0 },                                     // degrees
+    hill:{ x0:0, y0:100, z0:0, xd0:0, yd0:0, zd0:0 },
+    elem:{ da:0, dth:0, di:0, dW:0, dq1:0, dq2:0 },              // angles in degrees
+  };
+  const cases = [
+    {x0:0,    y0:100,  z0:0, xd0:0,     yd0:0,      zd0:0},  // stationary hold, 100 m ahead
+    {x0:300,  y0:0,    z0:0, xd0:0,     yd0:-0.698, zd0:0},  // ellipse centred on the target
+    {x0:150,  y0:600,  z0:0, xd0:0,     yd0:-0.349, zd0:0},  // leading ellipse, 300-900 m ahead
+    {x0:0,    y0:-300, z0:0, xd0:0.116, yd0:0,      zd0:0},  // trailing ellipse, 300-700 m behind
+    {x0:0,    y0:0,    z0:0, xd0:0.3,   yd0:0,      zd0:0},  // radial push, ellipse through the target
+    {x0:200,  y0:0,    z0:0, xd0:0,     yd0:0,      zd0:0},  // unbounded, drifts back 7.5 km per orbit
+  ];
+
+  // ---------- orbit ----------
   const n = () => 2*Math.PI/(state.period*60);
-  function cw(t){
-    const N=n(), c=Math.cos(N*t), s=Math.sin(N*t);
-    const {x0,y0,xd0,yd0}=state;
-    const x=(4-3*c)*x0 + (s/N)*xd0 + (2/N)*(1-c)*yd0;
-    const y=6*(s-N*t)*x0 + y0 - (2/N)*(1-c)*xd0 + ((4*s-3*N*t)/N)*yd0;
-    return [x,y];
+  const sma = () => Math.cbrt(MU/(n()*n()));
+
+  // ---------- element differences <-> Hill state at t = 0 (linearised, circular target) ----------
+  function elemToHill(e){
+    const a=sma(), N=n(), inc=state.tgt.inc*d2r, th=state.tgt.th0*d2r, dth=e.dth*d2r, di=e.di*d2r, dW=e.dW*d2r;
+    const c=Math.cos(th), s=Math.sin(th);
+    return {
+      x0: e.da - a*(e.dq1*c + e.dq2*s),
+      y0: a*(dth + Math.cos(inc)*dW) + 2*a*(e.dq1*s - e.dq2*c),
+      z0: a*(di*s - dW*Math.sin(inc)*c),
+      xd0: a*N*(e.dq1*s - e.dq2*c),
+      yd0: -1.5*N*e.da + 2*a*N*(e.dq1*c + e.dq2*s),
+      zd0: a*N*(di*c + dW*Math.sin(inc)*s),
+    };
   }
-  function params(){
-    const N=n(); const {x0,y0,xd0,yd0}=state;
-    return { a1:y0-2*xd0/N, a2:2*x0+yd0/N, a3:Math.hypot(2*yd0/N+3*x0, xd0/N), N };
+  function hillToElem(h){
+    const a=sma(), N=n(), inc=state.tgt.inc*d2r, th=state.tgt.th0*d2r, c=Math.cos(th), s=Math.sin(th), si=Math.sin(inc);
+    const da=4*h.x0+2*h.yd0/N, A=(3*h.x0+2*h.yd0/N)/a, B=h.xd0/(a*N);
+    const dq1=A*c+B*s, dq2=A*s-B*c, a1=h.y0-2*h.xd0/N;
+    const C=h.z0/a, D=h.zd0/(a*N), di=C*s+D*c, dW=Math.abs(si)>1e-9?(D*s-C*c)/si:0, dth=a1/a-Math.cos(inc)*dW;
+    return { da, dth:dth*r2d, di:di*r2d, dW:dW*r2d, dq1, dq2 };
+  }
+  const hillNow = () => state.mode==='hill' ? state.hill : elemToHill(state.elem);
+  const elemNow = () => state.mode==='elem' ? state.elem : hillToElem(state.hill);
+
+  // ---------- CW solution ----------
+  function cw(h,t){
+    const N=n(), c=Math.cos(N*t), s=Math.sin(N*t);
+    return [ (4-3*c)*h.x0 + (s/N)*h.xd0 + (2/N)*(1-c)*h.yd0,
+             6*(s-N*t)*h.x0 + h.y0 - (2/N)*(1-c)*h.xd0 + ((4*s-3*N*t)/N)*h.yd0,
+             h.z0*c + (h.zd0/N)*s ];
+  }
+  function params(h){
+    const N=n();
+    return { a1:h.y0-2*h.xd0/N, a2:2*h.x0+h.yd0/N, a3:Math.hypot(2*h.yd0/N+3*h.x0, h.xd0/N), zamp:Math.hypot(h.z0, h.zd0/N), N };
   }
   const center = (p,t) => [2*p.a2, p.a1-3*p.a2*p.N*t];
 
-  // ---------- trajectory cache ----------
-  let path=[], bounds=null, P=null;
+  // ---------- recompute ----------
+  let H=null, P=null, path=[], bounds=null;
   function recompute(){
-    P=params();
+    H=hillNow(); P=params(H);
     const T=state.orbits*state.period*60, steps=Math.max(200, Math.round(600*state.orbits));
-    path=[]; let minX=0,maxX=0,minY=0,maxY=0;
+    path=[]; let b={minX:0,maxX:0,minY:0,maxY:0,minZ:0,maxZ:0};
     for(let i=0;i<=steps;i++){
-      const t=T*i/steps, [x,y]=cw(t); path.push([x,y,t]);
-      if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y;
+      const t=T*i/steps, [x,y,z]=cw(H,t); path.push([x,y,z,t]);
+      b.minX=Math.min(b.minX,x); b.maxX=Math.max(b.maxX,x); b.minY=Math.min(b.minY,y); b.maxY=Math.max(b.maxY,y); b.minZ=Math.min(b.minZ,z); b.maxZ=Math.max(b.maxZ,z);
     }
-    // include guide ellipse extent at t=0 and t=T so it never falls off-screen
-    if(P.a3>0){
-      for(const t of [0,T]){ const [cx,cy]=center(P,t);
-        minX=Math.min(minX,cx-P.a3); maxX=Math.max(maxX,cx+P.a3);
-        minY=Math.min(minY,cy-2*P.a3); maxY=Math.max(maxY,cy+2*P.a3); }
-    }
-    const padX=Math.max((maxX-minX)*0.15, 40), padY=Math.max((maxY-minY)*0.12, 40);
-    bounds={minX:minX-padX,maxX:maxX+padX,minY:minY-padY,maxY:maxY+padY};
-    updateReadouts(); draw();
+    if(P.a3>0) for(const t of [0,T]){ const [cx,cy]=center(P,t);
+      b.minX=Math.min(b.minX,cx-P.a3); b.maxX=Math.max(b.maxX,cx+P.a3); b.minY=Math.min(b.minY,cy-2*P.a3); b.maxY=Math.max(b.maxY,cy+2*P.a3); }
+    const pad=(lo,hi,f)=>{ const p=Math.max((hi-lo)*f,40); return [lo-p,hi+p]; };
+    [b.minX,b.maxX]=pad(b.minX,b.maxX,0.15); [b.minY,b.maxY]=pad(b.minY,b.maxY,0.10); [b.minZ,b.maxZ]=pad(b.minZ,b.maxZ,0.25);
+    bounds=b; updateReadouts(); draw();
   }
 
   // ---------- readouts ----------
-  const fm = (v,d=1) => (Math.abs(v)<1e-9?0:v).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d});
+  const fm=(v,d=1)=>(Math.abs(v)<Math.pow(10,-d)/2?0:v).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d});
   function updateReadouts(){
-    $('a1').textContent=fm(P.a1)+' m';
-    $('a2').textContent=fm(P.a2)+' m';
-    $('a3').textContent=fm(P.a3)+' m';
-    const perOrbit=-6*Math.PI*P.a2;
-    $('drift').textContent=(Math.abs(P.a2)<0.5?'none':fm(perOrbit,0)+' m per orbit along y');
-    const closedYd=-2*P.N*state.x0;
-    if($('closeHint')) $('closeHint').textContent=`Closed when ẏ₀ = −2n·x₀ = ${fm(closedYd,3)} m/s`;
+    $('a1').textContent=fm(P.a1)+' m'; $('a2').textContent=fm(P.a2)+' m'; $('a3').textContent=fm(P.a3)+' m';
+    $('zamp').textContent=fm(P.zamp)+' m';
+    const a2z=Math.abs(P.a2)<0.5, a3z=P.a3<0.5, zz=P.zamp<0.5;
+    $('drift').textContent=a2z?'none':fm(-6*Math.PI*P.a2,0)+' m per orbit along y';
+    if($('closeHint')) $('closeHint').textContent=`Closed when ẏ₀ = −2n·x₀ = ${fm(-2*n()*state.hill.x0,3)} m/s`;
+    if($('centerHint')) $('centerHint').textContent=`Centred when Δθ₀ = −ΔΩ cos i = ${fm(-state.elem.dW*Math.cos(state.tgt.inc*d2r),6)}°`;
+    $('mdeg').textContent=fm(sma()*1e-3*d2r,0);
+    const sig=(v,p=4)=>{ const x=Number(v.toPrecision(p)); return Math.abs(x)<1e-12?'0':String(x); };
+    if(state.mode==='elem'){
+      $('eqPos').textContent=`${fm(H.x0,0)}, ${fm(H.y0,0)}, ${fm(H.z0,0)} m`;
+      $('eqVel').textContent=`${fm(H.xd0,3)}, ${fm(H.yd0,3)}, ${fm(H.zd0,3)} m/s`;
+    } else {
+      const E=elemNow();
+      $('eqDa').textContent=fm(E.da,1)+' m';
+      $('eqDth').textContent=sig(E.dth)+'°';
+      $('eqDiW').textContent=sig(E.di)+'°, '+sig(E.dW)+'°';
+      $('eqDq').textContent=sig(E.dq1)+', '+sig(E.dq2);
+    }
     const v=$('verdict'); v.classList.remove('closed');
-    const a2z=Math.abs(P.a2)<0.5, a3z=P.a3<0.5;
-    if(a2z&&a3z){ v.innerHTML='<strong>Stationary.</strong> The chaser holds its position relative to the target.'; v.classList.add('closed'); }
-    else if(a3z){ v.innerHTML='<strong>Straight-line drift.</strong> No ellipse; the chaser slides along <i>y</i> at constant rate.'; }
-    else if(a2z){ v.innerHTML='<strong>Closed ellipse.</strong> <i>a</i><sub>2</sub> = 0, so the centre stays put. Semi-axes <i>a</i><sub>3</sub> (radial) and 2<i>a</i><sub>3</sub> (along-track).'; v.classList.add('closed'); }
-    else { v.innerHTML='<strong>Rolling ellipse.</strong> The centre drifts along <i>y</i> at 3<i>a</i><sub>2</sub><i>n</i>, so the ellipse never closes.'; }
-    const T=state.orbits*state.period*60, t=state.tau*T;
-    $('tlabel').textContent=`t = ${fm(state.tau*state.orbits,2)} orbits  (${fm(t/60,1)} min)`;
+    const elemNote = state.mode==='elem' ? ' In element terms: <i>a</i><sub>2</sub> = Δ<i>a</i>/2, so bounded means Δ<i>a</i> = 0.' : '';
+    let msg;
+    if(a2z&&a3z&&zz){ msg='<strong>Stationary.</strong> The chaser holds its position relative to the target.'; v.classList.add('closed'); }
+    else if(a2z&&a3z){ msg='<strong>Cross-track oscillation only.</strong> Fixed in-plane position; the chaser swings through <i>z</i> once per orbit.'; v.classList.add('closed'); }
+    else if(a3z){ msg='<strong>Straight-line drift.</strong> No in-plane ellipse; the chaser slides along <i>y</i> at constant rate.'+elemNote; }
+    else if(a2z){ msg='<strong>Closed ellipse.</strong> <i>a</i><sub>2</sub> = 0, so the centre stays put.'+(zz?'':' Cross-track motion adds a tilt out of the plane.'); v.classList.add('closed'); }
+    else { msg='<strong>Rolling ellipse.</strong> The centre drifts along <i>y</i> at 3<i>a</i><sub>2</sub><i>n</i>, so the ellipse never closes.'+elemNote; }
+    v.innerHTML=msg;
+    const T=state.orbits*state.period*60;
+    $('tlabel').textContent=`t = ${fm(state.tau*state.orbits,2)} orbits  (${fm(state.tau*T/60,1)} min)`;
   }
 
   // ---------- drawing ----------
+  const font=(px)=>px+'px '+getComputedStyle(document.body).fontFamily;
   function niceStep(range){ const raw=range/6, p=Math.pow(10,Math.floor(Math.log10(raw))), m=raw/p; return p*(m<1.5?1:m<3.5?2:m<7.5?5:10); }
   function draw(){
-    const dpr=window.devicePixelRatio||1, W=canvas.clientWidth, H=canvas.clientHeight;
-    if(canvas.width!==W*dpr||canvas.height!==H*dpr){ canvas.width=W*dpr; canvas.height=H*dpr; }
-    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+    const dpr=window.devicePixelRatio||1, W=canvas.clientWidth, Hh=canvas.clientHeight;
+    if(canvas.width!==W*dpr||canvas.height!==Hh*dpr){ canvas.width=W*dpr; canvas.height=Hh*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,Hh);
     if(!bounds) return;
-    const m={l:64,r:22,t:34,b:46};
-    const rx=bounds.maxX-bounds.minX, ry=bounds.maxY-bounds.minY;
-    const s=Math.min((W-m.l-m.r)/ry,(H-m.t-m.b)/rx);
-    const cx=(m.l+W-m.r)/2, cy=(m.t+H-m.b)/2, my=(bounds.minY+bounds.maxY)/2, mx=(bounds.minX+bounds.maxX)/2;
-    const X = y => cx+(y-my)*s;         // world y -> screen x
-    const Y = x => cy-(x-mx)*s;         // world x -> screen y
-    const T=state.orbits*state.period*60, tNow=state.tau*T;
+    const hasZ=P.zamp>0.5;
+    const m={l:64,r:22,t:34,b:46,gap:44};
+    const rY=bounds.maxY-bounds.minY, rX=bounds.maxX-bounds.minX, rZ=bounds.maxZ-bounds.minZ;
+    const availW=W-m.l-m.r, availH=Hh-m.t-m.b-(hasZ?m.gap:0);
+    const s=hasZ?Math.min(availW/rY, availH/(rX+rZ)):Math.min(availW/rY, availH/rX);
+    const extra=hasZ?(availH-(rX+rZ)*s)/2:0;
+    const topH=hasZ?rX*s+extra:availH, botH=hasZ?rZ*s+extra:0;
+    const panels=[{y0:m.t, h:topH, lo:bounds.minX, hi:bounds.maxX, title:'↑  radial  x (m), away from Earth', k:0}];
+    if(hasZ) panels.push({y0:m.t+topH+m.gap, h:botH, lo:bounds.minZ, hi:bounds.maxZ, title:'↑  cross-track  z (m)', k:2});
+    const cxPix=(m.l+W-m.r)/2, my=(bounds.minY+bounds.maxY)/2;
+    const X=y=>cxPix+(y-my)*s;
+    const T=state.orbits*state.period*60, tNow=state.tau*T, now=cw(H,tNow);
+    const visYmin=my-(cxPix-m.l)/s, visYmax=my+(W-m.r-cxPix)/s, g=niceStep(visYmax-visYmin);
 
-    // grid
-    const visYmin=my-(cx-m.l)/s, visYmax=my+(W-m.r-cx)/s, visXmin=mx-(H-m.b-cy)/s, visXmax=mx+(cy-m.t)/s;
-    const gy=niceStep(visYmax-visYmin), gx=niceStep(visXmax-visXmin), g=Math.max(gx,gy);
-    ctx.strokeStyle='#DCE3EC'; ctx.lineWidth=1; ctx.font='12px '+getComputedStyle(document.body).fontFamily; ctx.fillStyle='#5B6B80';
-    ctx.textAlign='center'; ctx.textBaseline='top';
-    for(let v=Math.ceil(visYmin/g)*g; v<=visYmax; v+=g){ const px=X(v); ctx.beginPath(); ctx.moveTo(px,m.t); ctx.lineTo(px,H-m.b); ctx.stroke(); ctx.fillText(fm(v,0),px,H-m.b+6); }
-    ctx.textAlign='right'; ctx.textBaseline='middle';
-    for(let v=Math.ceil(visXmin/g)*g; v<=visXmax; v+=g){ const py=Y(v); ctx.beginPath(); ctx.moveTo(m.l,py); ctx.lineTo(W-m.r,py); ctx.stroke(); ctx.fillText(fm(v,0),m.l-8,py); }
-    // zero axes
-    ctx.strokeStyle='#C9D2DE'; ctx.lineWidth=1.2;
-    if(visYmin<0&&visYmax>0){ ctx.beginPath(); ctx.moveTo(X(0),m.t); ctx.lineTo(X(0),H-m.b); ctx.stroke(); }
-    if(visXmin<0&&visXmax>0){ ctx.beginPath(); ctx.moveTo(m.l,Y(0)); ctx.lineTo(W-m.r,Y(0)); ctx.stroke(); }
-    // axis titles
-    ctx.fillStyle='#13294B'; ctx.font='13px '+getComputedStyle(document.body).fontFamily;
-    ctx.textAlign='right'; ctx.textBaseline='bottom'; ctx.fillText('along-track  y (m)  →', W-m.r, H-6);
-    ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText('↑  radial  x (m), away from Earth', m.l, 10);
-
-    // centre's drift line and guide ellipse
-    if(state.showEll && P.a3>0.5){
-      const [ecx,ecy]=center(P,tNow), [c0x,c0y]=center(P,0), [c1x,c1y]=center(P,T);
-      ctx.strokeStyle='#A9B6C7'; ctx.setLineDash([2,5]); ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(X(c0y),Y(c0x)); ctx.lineTo(X(c1y),Y(c1x)); ctx.stroke();
-      ctx.strokeStyle='#5B6B80'; ctx.setLineDash([6,5]); ctx.lineWidth=1.3;
-      ctx.beginPath(); ctx.ellipse(X(ecy),Y(ecx),2*P.a3*s,P.a3*s,0,0,2*Math.PI); ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.fillStyle='#5B6B80'; ctx.beginPath(); ctx.arc(X(ecy),Y(ecx),3,0,2*Math.PI); ctx.fill();
-      ctx.font='12px '+getComputedStyle(document.body).fontFamily; ctx.textAlign='left'; ctx.textBaseline='bottom';
-      ctx.fillText('centre', X(ecy)+6, Y(ecx)-4);
+    for(const p of panels){
+      const cy=p.y0+p.h/2, mid=(p.lo+p.hi)/2, Y=v=>cy-(v-mid)*s, vmin=mid-(p.h/2)/s, vmax=mid+(p.h/2)/s;
+      ctx.save(); ctx.beginPath(); ctx.rect(m.l-1,p.y0-1,availW+2,p.h+2); ctx.clip();
+      // grid
+      ctx.strokeStyle='#DCE3EC'; ctx.lineWidth=1;
+      for(let v=Math.ceil(visYmin/g)*g; v<=visYmax; v+=g){ ctx.beginPath(); ctx.moveTo(X(v),p.y0); ctx.lineTo(X(v),p.y0+p.h); ctx.stroke(); }
+      for(let v=Math.ceil(vmin/g)*g; v<=vmax; v+=g){ ctx.beginPath(); ctx.moveTo(m.l,Y(v)); ctx.lineTo(W-m.r,Y(v)); ctx.stroke(); }
+      ctx.strokeStyle='#C9D2DE'; ctx.lineWidth=1.2;
+      if(visYmin<0&&visYmax>0){ ctx.beginPath(); ctx.moveTo(X(0),p.y0); ctx.lineTo(X(0),p.y0+p.h); ctx.stroke(); }
+      if(vmin<0&&vmax>0){ ctx.beginPath(); ctx.moveTo(m.l,Y(0)); ctx.lineTo(W-m.r,Y(0)); ctx.stroke(); }
+      // guide ellipse (in-plane panel only)
+      if(p.k===0 && state.showEll && P.a3>0.5){
+        const [ecx,ecy]=center(P,tNow), [c0x,c0y]=center(P,0), [c1x,c1y]=center(P,T);
+        ctx.strokeStyle='#A9B6C7'; ctx.setLineDash([2,5]); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(X(c0y),Y(c0x)); ctx.lineTo(X(c1y),Y(c1x)); ctx.stroke();
+        ctx.strokeStyle='#5B6B80'; ctx.setLineDash([6,5]); ctx.lineWidth=1.3; ctx.beginPath(); ctx.ellipse(X(ecy),Y(ecx),2*P.a3*s,P.a3*s,0,0,2*Math.PI); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle='#5B6B80'; ctx.beginPath(); ctx.arc(X(ecy),Y(ecx),3,0,2*Math.PI); ctx.fill();
+        ctx.font=font(12); ctx.textAlign='left'; ctx.textBaseline='bottom'; ctx.fillText('centre', X(ecy)+6, Y(ecx)-4);
+      }
+      // path: faint full, solid traversed
+      ctx.lineWidth=1.5; ctx.strokeStyle='rgba(19,41,75,0.22)'; ctx.beginPath();
+      path.forEach((q,i)=> i?ctx.lineTo(X(q[1]),Y(q[p.k])):ctx.moveTo(X(q[1]),Y(q[p.k]))); ctx.stroke();
+      ctx.lineWidth=2.2; ctx.strokeStyle='#13294B'; ctx.beginPath(); let st=false;
+      for(const q of path){ if(q[3]>tNow) break; st?ctx.lineTo(X(q[1]),Y(q[p.k])):ctx.moveTo(X(q[1]),Y(q[p.k])); st=true; } ctx.stroke();
+      // target
+      ctx.strokeStyle='#13294B'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(X(0)-8,Y(0)); ctx.lineTo(X(0)+8,Y(0)); ctx.moveTo(X(0),Y(0)-8); ctx.lineTo(X(0),Y(0)+8); ctx.stroke();
+      ctx.beginPath(); ctx.arc(X(0),Y(0),4,0,2*Math.PI); ctx.stroke();
+      if(p.k===0){ ctx.fillStyle='#13294B'; ctx.font=font(12); ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText('target', X(0)+10, Y(0)+6); }
+      // start marker
+      const s0=[H.x0,H.y0,H.z0];
+      ctx.strokeStyle='#13294B'; ctx.lineWidth=1.5; ctx.fillStyle='#FFFFFF';
+      ctx.beginPath(); ctx.arc(X(s0[1]),Y(s0[p.k]),4.5,0,2*Math.PI); ctx.fill(); ctx.stroke();
+      if(p.k===0){ ctx.fillStyle='#13294B'; ctx.textAlign='left'; ctx.textBaseline='bottom'; ctx.fillText('t = 0', X(s0[1])+8, Y(s0[p.k])-6); }
+      // chaser
+      ctx.fillStyle='#FFFFFF'; ctx.beginPath(); ctx.arc(X(now[1]),Y(now[p.k]),8,0,2*Math.PI); ctx.fill();
+      ctx.fillStyle='#E84A27'; ctx.beginPath(); ctx.arc(X(now[1]),Y(now[p.k]),6,0,2*Math.PI); ctx.fill();
+      ctx.restore();
+      // tick labels and title (outside clip)
+      ctx.fillStyle='#5B6B80'; ctx.font=font(12); ctx.textAlign='right'; ctx.textBaseline='middle';
+      for(let v=Math.ceil(vmin/g)*g; v<=vmax; v+=g){ ctx.fillText(fm(v,0), m.l-8, Y(v)); }
+      ctx.fillStyle='#13294B'; ctx.font=font(13); ctx.textAlign='left'; ctx.textBaseline='bottom'; ctx.fillText(p.title, m.l, p.y0-6);
     }
-
-    // full path (faint) then traversed path (solid)
-    ctx.lineWidth=1.5; ctx.strokeStyle='rgba(19,41,75,0.22)'; ctx.beginPath();
-    path.forEach((p,i)=> i?ctx.lineTo(X(p[1]),Y(p[0])):ctx.moveTo(X(p[1]),Y(p[0]))); ctx.stroke();
-    ctx.lineWidth=2.2; ctx.strokeStyle='#13294B'; ctx.beginPath(); let started=false;
-    for(const p of path){ if(p[2]>tNow) break; started?ctx.lineTo(X(p[1]),Y(p[0])):ctx.moveTo(X(p[1]),Y(p[0])); started=true; }
-    ctx.stroke();
-
-    // target at origin
-    ctx.strokeStyle='#13294B'; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.moveTo(X(0)-8,Y(0)); ctx.lineTo(X(0)+8,Y(0)); ctx.moveTo(X(0),Y(0)-8); ctx.lineTo(X(0),Y(0)+8); ctx.stroke();
-    ctx.beginPath(); ctx.arc(X(0),Y(0),4,0,2*Math.PI); ctx.stroke();
-    ctx.fillStyle='#13294B'; ctx.font='12px '+getComputedStyle(document.body).fontFamily; ctx.textAlign='left'; ctx.textBaseline='top';
-    ctx.fillText('target', X(0)+10, Y(0)+6);
-
-    // start marker
-    ctx.strokeStyle='#13294B'; ctx.lineWidth=1.5; ctx.fillStyle='#FFFFFF';
-    ctx.beginPath(); ctx.arc(X(state.y0),Y(state.x0),4.5,0,2*Math.PI); ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#13294B'; ctx.textAlign='left'; ctx.textBaseline='bottom'; ctx.fillText('t = 0', X(state.y0)+8, Y(state.x0)-6);
-
-    // chaser
-    const [px,py]=cw(tNow);
-    ctx.fillStyle='#FFFFFF'; ctx.beginPath(); ctx.arc(X(py),Y(px),8,0,2*Math.PI); ctx.fill();
-    ctx.fillStyle='#E84A27'; ctx.beginPath(); ctx.arc(X(py),Y(px),6,0,2*Math.PI); ctx.fill();
+    // shared horizontal axis labels
+    const last=panels[panels.length-1], base=last.y0+last.h;
+    ctx.fillStyle='#5B6B80'; ctx.font=font(12); ctx.textAlign='center'; ctx.textBaseline='top';
+    for(let v=Math.ceil(visYmin/g)*g; v<=visYmax; v+=g){ ctx.fillText(fm(v,0), X(v), base+6); }
+    ctx.fillStyle='#13294B'; ctx.font=font(13); ctx.textAlign='right'; ctx.textBaseline='bottom'; ctx.fillText('along-track  y (m)  →', W-m.r, Hh-6);
   }
 
   // ---------- animation ----------
   let last=null;
   function frame(ts){
     if(!state.playing) return;
-    if(last!=null){ const dt=(ts-last)/1000; state.tau=(state.tau + dt/(6*state.orbits))%1; $('time').value=state.tau; updateReadouts(); draw(); }
+    if(last!=null){ const dt=(ts-last)/1000; state.tau=(state.tau+dt/(6*state.orbits))%1; $('time').value=state.tau; updateReadouts(); draw(); }
     last=ts; requestAnimationFrame(frame);
   }
-  function setPlaying(p){
-    state.playing=p; last=null; const b=$('play'); b.textContent=p?'Pause':'Play'; b.setAttribute('aria-pressed',p);
-    if(p) requestAnimationFrame(frame);
-  }
+  function setPlaying(p){ state.playing=p; last=null; const b=$('play'); b.textContent=p?'Pause':'Play'; b.setAttribute('aria-pressed',p); if(p) requestAnimationFrame(frame); }
 
   // ---------- inputs ----------
-  function bind(key){
+  const sig=(v,p=4)=>{ const x=Number(v.toPrecision(p)); return Math.abs(x)<1e-12?0:x; };
+  function writeHill(){ for(const k of ['x0','y0','z0','xd0','yd0','zd0']){ $(k).value=sig(state.hill[k],6); $(k+'r').value=state.hill[k]; } }
+  function writeElem(){ for(const k of ['da','dth','di','dW','dq1','dq2']) $(k).value=sig(state.elem[k]); }
+  function bindHill(key){
     const num=$(key), rng=$(key+'r');
-    num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)){ state[key]=v; rng.value=v; recompute(); } });
-    rng.addEventListener('input', ()=>{ const v=parseFloat(rng.value); state[key]=v; num.value=v; recompute(); });
+    num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)){ state.hill[key]=v; rng.value=v; recompute(); } });
+    rng.addEventListener('input', ()=>{ const v=parseFloat(rng.value); state.hill[key]=v; num.value=v; recompute(); });
   }
-  ['x0','y0','xd0','yd0'].forEach(bind);
-  const syncN=()=>{ $('nin').value=Number(n().toPrecision(4)); };
-  $('period').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=v; syncN(); recompute(); } });
-  $('nin').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=2*Math.PI/v/60; $('period').value=Number(state.period.toPrecision(5)); recompute(); } });
-  syncN();
+  ['x0','y0','z0','xd0','yd0','zd0'].forEach(bindHill);
+  ['da','dth','di','dW','dq1','dq2'].forEach(k=>$(k).addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ state.elem[k]=v; recompute(); } }));
+  ['inc','th0'].forEach(k=>$(k).addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ state.tgt[k]=v; recompute(); } }));
+  $('inc').value=state.tgt.inc; $('th0').value=state.tgt.th0;
+
+  // orbit: n, period, a linked
+  const writeOrbit=(skip)=>{ if(skip!=='nin') $('nin').value=Number(n().toPrecision(4)); if(skip!=='period') $('period').value=Number(state.period.toPrecision(5)); if(skip!=='sma') $('sma').value=Number((sma()/1e3).toPrecision(5)); };
+  $('period').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=v; writeOrbit('period'); recompute(); } });
+  $('nin').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=2*Math.PI/v/60; writeOrbit('nin'); recompute(); } });
+  $('sma').addEventListener('input', e=>{ const v=parseFloat(e.target.value)*1e3; if(v>0){ state.period=2*Math.PI*Math.sqrt(v*v*v/MU)/60; writeOrbit('sma'); recompute(); } });
   $('orbits').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.orbits=v; recompute(); } });
   $('time').addEventListener('input', e=>{ state.tau=parseFloat(e.target.value); updateReadouts(); draw(); });
   $('showEll').addEventListener('change', e=>{ state.showEll=e.target.checked; draw(); });
   $('play').addEventListener('click', ()=>setPlaying(!state.playing));
-  $('closeBtn').addEventListener('click', ()=>{ const v=Math.round(-2*n()*state.x0*1e5)/1e5; state.yd0=v; $('yd0').value=v; $('yd0r').value=v; recompute(); });
 
+  // helper buttons
+  if(SHOW_CLOSE_BUTTON){ $('closeBtn').addEventListener('click', ()=>{ state.hill.yd0=Math.round(-2*n()*state.hill.x0*1e5)/1e5; writeHill(); recompute(); }); }
+  else { $('closeBtn').remove(); $('closeHint').remove(); }
+  if(SHOW_CENTER_BUTTON){ $('centerBtn').addEventListener('click', ()=>{ state.elem.dth=-state.elem.dW*Math.cos(state.tgt.inc*d2r); writeElem(); recompute(); }); }
+  else { $('centerBtn').remove(); $('centerHint').remove(); }
+
+  // mode switch: convert the authoritative representation into the other one, then swap
+  function setMode(mode){
+    if(mode===state.mode) return;
+    if(mode==='elem') state.elem=hillToElem(state.hill); else state.hill=elemToHill(state.elem);
+    state.mode=mode;
+    $('modeHill').setAttribute('aria-pressed', mode==='hill'); $('modeElem').setAttribute('aria-pressed', mode==='elem');
+    $('hillFields').hidden = mode!=='hill'; $('elemFields').hidden = mode!=='elem';
+    $('hillEq').hidden = mode!=='elem'; $('elemEq').hidden = mode!=='hill';
+    $('eqHead').textContent = mode==='elem' ? 'Same motion as a Hill-frame state' : 'Same motion in element differences';
+    writeHill(); writeElem(); recompute();
+  }
   function loadCase(i){
-    Object.assign(state, cases[i]); state.tau=0; $('time').value=0;
-    ['x0','y0','xd0','yd0'].forEach(k=>{ $(k).value=state[k]; $(k+'r').value=state[k]; });
+    Object.assign(state.hill, cases[i]);
+    if(state.mode==='elem') state.elem=hillToElem(state.hill);
+    state.tau=0; $('time').value=0;
     document.querySelectorAll('#cases button').forEach((b,j)=>b.setAttribute('aria-pressed', j===i));
-    recompute();
+    writeHill(); writeElem(); recompute();
   }
-  if(SHOW_CASES){
-    cases.forEach((c,i)=>{ const b=document.createElement('button'); b.textContent='Case '+(i+1); b.addEventListener('click',()=>loadCase(i)); $('cases').appendChild(b); });
-  } else {
-    $('cases').previousElementSibling.remove(); $('cases').remove();
-  }
-  if(!SHOW_CLOSE_BUTTON){ $('closeBtn').remove(); $('closeHint').remove(); }
+  $('modeHill').addEventListener('click', ()=>setMode('hill'));
+  $('modeElem').addEventListener('click', ()=>setMode('elem'));
+  if(SHOW_CASES){ cases.forEach((c,i)=>{ const b=document.createElement('button'); b.textContent='Case '+(i+1); b.addEventListener('click',()=>loadCase(i)); $('cases').appendChild(b); }); }
+  else { $('casesHead').remove(); $('cases').remove(); }
 
+  // ---------- init ----------
   new ResizeObserver(draw).observe(canvas.parentElement);
-  if(SHOW_CASES){ loadCase(0); } else { ['x0','y0','xd0','yd0'].forEach(k=>{ $(k).value=state[k]; $(k+'r').value=state[k]; }); recompute(); }
+  writeOrbit();
+  if(SHOW_CASES) loadCase(0); else { writeHill(); writeElem(); recompute(); }
   if(!reduce) setPlaying(true);
 })();
 </script>
