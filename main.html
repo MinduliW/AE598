@@ -22,10 +22,9 @@
   h2{font-size:13px;font-weight:600;margin:12px 0 6px;color:var(--slate)}
   h2:first-child{margin-top:0}
   .seg{display:flex;gap:0;margin-bottom:4px}
-  .seg button{flex:1;border-radius:0;min-width:0;padding-left:7px;padding-right:7px}
-  .seg button+button{margin-left:-1px}
+  .seg button{flex:1;border-radius:0}
   .seg button:first-child{border-radius:4px 0 0 4px}
-  .seg button:last-child{border-radius:0 4px 4px 0}
+  .seg button:last-child{border-radius:0 4px 4px 0;margin-left:-1px}
   .cases{display:flex;flex-wrap:wrap;gap:6px}
   button{font:inherit;color:var(--navy);background:var(--white);border:1px solid var(--rule);border-radius:4px;padding:5px 10px;cursor:pointer}
   button:hover{border-color:var(--navy)}
@@ -35,6 +34,12 @@
   button.accent:hover{background:var(--orange);color:var(--white)}
   button[aria-pressed="true"]{background:var(--navy);color:var(--white);border-color:var(--navy)}
   .field{display:grid;grid-template-columns:40px 1fr 78px;align-items:center;gap:8px;margin:4px 0}
+  .field.wide{grid-template-columns:92px 1fr 88px}
+  .field.wide label{font-size:13px}
+  .subseg{display:flex;gap:0;margin:6px 0 8px}
+  .subseg button{flex:1;border-radius:0}
+  .subseg button:first-child{border-radius:4px 0 0 4px}
+  .subseg button:last-child{border-radius:0 4px 4px 0;margin-left:-1px}
   .field label,.g label{font-style:italic}
   label sub{font-style:normal;font-size:11px}
   input[type=range]{width:100%;accent-color:var(--navy)}
@@ -56,24 +61,55 @@
   .playbar input[type=range]{flex:1;min-width:160px;accent-color:var(--orange)}
   .playbar .t{font-variant-numeric:tabular-nums;min-width:190px;font-size:14px}
   .playbar label.check{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--slate)}
+  .formation-options{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0 6px}
+  .formation-choice{display:flex;align-items:center;gap:7px;padding:6px 8px;background:var(--white);border:1px solid var(--rule);border-radius:4px;font-size:13px;cursor:pointer;min-width:0}
+  .formation-choice:hover{border-color:var(--navy)}
+  .formation-choice input{margin:0;accent-color:var(--navy);flex:0 0 auto}
+  .formation-choice:has(input:checked){border-color:var(--navy);background:#EAF0F8;font-weight:500}
+  .formation-note{margin:6px 0 8px;padding:8px 10px;background:var(--white);border-left:3px solid var(--orange);font-size:13px}
+  .formation-note .free{font-weight:600;color:var(--navy)}
+  .sense-row{display:grid;grid-template-columns:1fr 120px;align-items:center;gap:8px;margin:6px 0 4px;font-size:13px}
+  .sense-row select{width:100%;font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--rule);border-radius:4px;color:var(--navy);background:var(--white)}
+  .field.locked{opacity:.55}
+  .field.locked label::after{content:'  fixed';font-style:normal;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--slate)}
+  .field.locked input[type=range]{cursor:not-allowed}
+  input:disabled{cursor:not-allowed;background:#EEF1F5;color:#6C7786}
 </style>
 </head>
 <body>
 <header>
   <h1>Free-motion trajectories</h1>
-  <p>Clohessy–Wiltshire relative motion about a circular target. Describe the chaser by its Hill-frame state, orbit element differences, or geometric CW trajectory parameters, and see where it goes.</p>
+  <p>Clohessy–Wiltshire relative motion about a circular target. Describe the chaser by its Hill-frame state, relative orbital elements, or CW geometric constants, and see where it goes.</p>
 </header>
 <main>
   <aside>
     <h2>Describe the chaser by</h2>
     <div class="seg">
       <button id="modeHill" aria-pressed="true">Hill-frame state</button>
-      <button id="modeElem" aria-pressed="false">Orbit elements</button>
-      <button id="modeTraj" aria-pressed="false">CW parameters</button>
+      <button id="modeElem" aria-pressed="false">ROEs</button>
+      <button id="modeCW" aria-pressed="false">CW constants</button>
     </div>
 
     <h2 id="casesHead">Start from a case</h2>
     <div class="cases" id="cases"></div>
+
+    <h2>Formation design</h2>
+    <div class="formation-options" id="formationOptions" role="radiogroup" aria-label="Formation design">
+      <label class="formation-choice"><input type="radio" name="formation" value="free" checked> Free design</label>
+      <label class="formation-choice"><input type="radio" name="formation" value="inplane"> In-plane ellipse</label>
+      <label class="formation-choice"><input type="radio" name="formation" value="alongtrack"> Along-track</label>
+      <label class="formation-choice"><input type="radio" name="formation" value="intrack"> In-track</label>
+      <label class="formation-choice"><input type="radio" name="formation" value="circular"> Circular</label>
+      <label class="formation-choice"><input type="radio" name="formation" value="projected"> Projected circular</label>
+    </div>
+    <div class="sense-row" id="formationSenseRow" hidden>
+      <label for="formationSense">Cross-track branch</label>
+      <select id="formationSense">
+        <option value="1">+90° phase</option>
+        <option value="-1">−90° phase</option>
+      </select>
+    </div>
+    <div class="formation-note" id="formationNote"><span class="free">Free design:</span> all parameters are adjustable.</div>
 
     <div id="hillFields">
       <h2>Initial state</h2>
@@ -89,39 +125,44 @@
     </div>
 
     <div id="elemFields" hidden>
-      <h2>Differences δ<i>e</i> = <i>e</i><sub>C</sub> − <i>e</i><sub>T</sub></h2>
-      <div class="g">
-        <div><label for="da">Δ<i>a</i>, m</label><input type="number" id="da" step="any"></div>
-        <div><label for="dth">Δ<i>θ</i><sub>0</sub>, deg</label><input type="number" id="dth" step="any"></div>
-        <div><label for="di">Δ<i>i</i>, deg</label><input type="number" id="di" step="any"></div>
-        <div><label for="dW">ΔΩ, deg</label><input type="number" id="dW" step="any"></div>
-        <div><label for="dq1">Δ<i>q</i><sub>1</sub> = Δ(<i>e</i> cos <i>ω</i>)</label><input type="number" id="dq1" step="any"></div>
-        <div><label for="dq2">Δ<i>q</i><sub>2</sub> = Δ(<i>e</i> sin <i>ω</i>)</label><input type="number" id="dq2" step="any"></div>
-      </div>
-      <p class="hint">1 millidegree ≈ <span id="mdeg"></span> m along the orbit at this altitude.</p>
+      <h2>Relative orbital elements — circular target</h2>
+      <div class="field wide"><label for="da">Δ<i>a</i> (m)</label><input type="range" id="dar" min="-1000" max="1000" step="10"><input type="number" id="da" step="any"></div>
+      <div class="field wide"><label for="dth">Δ<i>θ</i><sub>0</sub> (deg)</label><input type="range" id="dthr" min="-0.2" max="0.2" step="0.001"><input type="number" id="dth" step="any"></div>
+      <div class="field wide"><label for="di">Δ<i>i</i> (deg)</label><input type="range" id="dir" min="-0.2" max="0.2" step="0.001"><input type="number" id="di" step="any"></div>
+      <div class="field wide"><label for="dW">ΔΩ (deg)</label><input type="range" id="dWr" min="-0.2" max="0.2" step="0.001"><input type="number" id="dW" step="any"></div>
+      <div class="field wide"><label for="dq1">Δ<i>q</i><sub>1</sub></label><input type="range" id="dq1r" min="-0.0002" max="0.0002" step="0.000001"><input type="number" id="dq1" step="any"></div>
+      <div class="field wide"><label for="dq2">Δ<i>q</i><sub>2</sub></label><input type="range" id="dq2r" min="-0.0002" max="0.0002" step="0.000001"><input type="number" id="dq2" step="any"></div>
+      <p class="hint">Δ<i>q</i><sub>1</sub>=Δ(<i>e</i> cos <i>ω</i>), Δ<i>q</i><sub>2</sub>=Δ(<i>e</i> sin <i>ω</i>). These nonsingular eccentricity-vector components remain meaningful for a circular chief. 1 millidegree ≈ <span id="mdeg"></span> m along the orbit.</p>
+
+      <h2>ROE → CW constants</h2>
+      <dl class="readout">
+        <dt>Δ<i>e</i></dt><dd id="roeDe"></dd>
+        <dt>δ<i>i</i></dt><dd id="roeDiMag"></dd>
+        <dt><i>A</i><sub>0</sub></dt><dd id="roeA0"></dd>
+        <dt>α</dt><dd id="roeAlpha"></dd>
+        <dt><i>B</i><sub>0</sub></dt><dd id="roeB0"></dd>
+        <dt>β<sub>0</sub></dt><dd id="roeBeta"></dd>
+        <dt><i>y</i><sub>off</sub></dt><dd id="roeYoff"></dd>
+        <dt><i>x</i><sub>off</sub></dt><dd id="roeXoff"></dd>
+      </dl>
+      <div class="verdict" id="roeClass"></div>
+      <p class="hint"><i>A</i><sub>0</sub>=<i>a</i>Δ<i>e</i>, <i>B</i><sub>0</sub>=<i>a</i>δ<i>i</i>, <i>y</i><sub>off</sub>=<i>a</i>(Δθ<sub>0</sub>+cos <i>i</i> ΔΩ), <i>x</i><sub>off</sub>=Δ<i>a</i>.</p>
+
       <button class="accent" id="centerBtn" style="margin-top:6px">Centre the formation</button>
       <p class="hint" id="centerHint"></p>
     </div>
 
-    <div id="trajFields" hidden>
-      <h2>Geometric CW trajectory parameters</h2>
-      <p class="hint" style="margin:0 0 6px">
-        <i>x</i> = −<i>A</i><sub>0</sub> cos(<i>nt</i> + α) + <i>x</i><sub>off</sub>,
-        <i>y</i> = 2<i>A</i><sub>0</sub> sin(<i>nt</i> + α) + <i>y</i><sub>off</sub> − 3<i>n</i><i>x</i><sub>off</sub><i>t</i>/2,
-        <i>z</i> = <i>B</i><sub>0</sub> sin(<i>nt</i> + β).
-      </p>
-      <div class="field"><label for="A0">A<sub>0</sub></label><input type="range" id="A0r" min="0" max="1000" step="5"><input type="number" id="A0" min="0" step="any" aria-label="A0 in metres"></div>
-      <div class="field"><label for="alpha">α</label><input type="range" id="alphar" min="-180" max="180" step="1"><input type="number" id="alpha" step="any" aria-label="alpha in degrees"></div>
-      <div class="field"><label for="B0">B<sub>0</sub></label><input type="range" id="B0r" min="0" max="1000" step="5"><input type="number" id="B0" min="0" step="any" aria-label="B0 in metres"></div>
-      <div class="field"><label for="beta">β</label><input type="range" id="betar" min="-180" max="180" step="1"><input type="number" id="beta" step="any" aria-label="beta in degrees"></div>
-      <div class="field"><label for="xoff">x<sub>off</sub></label><input type="range" id="xoffr" min="-1000" max="1000" step="5"><input type="number" id="xoff" step="any" aria-label="x offset in metres"></div>
-      <div class="field"><label for="yoff">y<sub>off</sub></label><input type="range" id="yoffr" min="-1500" max="1500" step="5"><input type="number" id="yoff" step="any" aria-label="y offset in metres"></div>
-      <p class="hint" style="margin-top:3px">A<sub>0</sub>, B<sub>0</sub>, x<sub>off</sub>, and y<sub>off</sub> are in metres; α and β are in degrees. You can use either the slider or the number box.</p>
-      <dl class="readout" style="margin-top:7px">
-        <dt>ẏ<sub>sec</sub></dt><dd id="trajSecRate"></dd>
-        <dt>walk/orbit</dt><dd id="trajWalkOrbit"></dd>
-      </dl>
-      <p class="hint">Set <i>x</i><sub>off</sub> = 0 for a bounded CW ellipse. Nonzero <i>x</i><sub>off</sub> translates the ellipse radially and makes its centre walk along-track.</p>
+    <div id="cwFields" hidden>
+      <h2>CW geometric constants</h2>
+      <p class="hint" style="margin:0 0 6px">Directly prescribe the ellipse amplitude/phase, cross-track amplitude/phase, and radial/along-track offsets.</p>
+      <div class="field wide"><label for="A0c"><i>A</i><sub>0</sub> (m)</label><input type="range" id="A0cr" min="0" max="1000" step="5"><input type="number" id="A0c" min="0" step="any"></div>
+      <div class="field wide"><label for="alphac">α (deg)</label><input type="range" id="alphacr" min="-180" max="180" step="1"><input type="number" id="alphac" step="any"></div>
+      <div class="field wide"><label for="B0c"><i>B</i><sub>0</sub> (m)</label><input type="range" id="B0cr" min="0" max="1000" step="5"><input type="number" id="B0c" min="0" step="any"></div>
+      <div class="field wide"><label for="betac">β<sub>0</sub> (deg)</label><input type="range" id="betacr" min="-180" max="180" step="1"><input type="number" id="betac" step="any"></div>
+      <div class="field wide"><label for="yoffc"><i>y</i><sub>off</sub> (m)</label><input type="range" id="yoffcr" min="-1500" max="1500" step="10"><input type="number" id="yoffc" step="any"></div>
+      <div class="field wide"><label for="xoffc"><i>x</i><sub>off</sub> (m)</label><input type="range" id="xoffcr" min="-1000" max="1000" step="10"><input type="number" id="xoffc" step="any"></div>
+      <p class="hint">Convention: <i>x</i>=−<i>A</i><sub>0</sub>cos(<i>nt</i>+α)+<i>x</i><sub>off</sub>, <i>y</i>=2<i>A</i><sub>0</sub>sin(<i>nt</i>+α)+<i>y</i><sub>off</sub>−(3/2)<i>n x</i><sub>off</sub><i>t</i>, <i>z</i>=<i>B</i><sub>0</sub>sin(<i>nt</i>+β<sub>0</sub>).</p>
+      <div class="verdict" id="cwClass"></div>
     </div>
 
     <h2>Target orbit</h2>
@@ -133,32 +174,19 @@
       <div><label for="inc" class="u">Inclination <i>i</i>, deg</label><input type="number" id="inc" step="any"></div>
       <div><label for="th0" class="u">True latitude <i>θ</i><sub>0</sub> at <i>t</i> = 0, deg</label><input type="number" id="th0" step="any"></div>
     </div>
-    <p class="hint">Edit any of <i>n</i>, period, or <i>a</i>; the others follow (<i>n</i>² <i>a</i>³ = μ). <i>i</i> and <i>θ</i><sub>0</sub> only matter for the element-difference description.</p>
+    <p class="hint">Edit any of <i>n</i>, period, or <i>a</i>; the others follow (<i>n</i>² <i>a</i>³ = μ). <i>i</i> and <i>θ</i><sub>0</sub> set the ROE ↔ CW-constant mapping; they do not change a motion that is already prescribed directly in Hill/CW coordinates.</p>
 
-    <div id="equivHill" hidden>
-      <h2>Same motion as a Hill-frame state</h2>
-      <dl class="readout" id="hillEq">
-        <dt>x<sub>0</sub>, y<sub>0</sub>, z<sub>0</sub></dt><dd id="eqPos"></dd>
-        <dt>ẋ<sub>0</sub>, ẏ<sub>0</sub>, ż<sub>0</sub></dt><dd id="eqVel"></dd>
-      </dl>
-    </div>
-    <div id="equivElem">
-      <h2>Same motion in element differences</h2>
-      <dl class="readout" id="elemEq">
-        <dt>Δa</dt><dd id="eqDa"></dd>
-        <dt>Δθ<sub>0</sub></dt><dd id="eqDth"></dd>
-        <dt>Δi, ΔΩ</dt><dd id="eqDiW"></dd>
-        <dt>Δq<sub>1</sub>, Δq<sub>2</sub></dt><dd id="eqDq"></dd>
-      </dl>
-    </div>
-    <div id="equivTraj">
-      <h2>Same motion in CW parameters</h2>
-      <dl class="readout" id="trajEq">
-        <dt>A<sub>0</sub>, α</dt><dd id="eqAalpha"></dd>
-        <dt>B<sub>0</sub>, β</dt><dd id="eqBbeta"></dd>
-        <dt>x<sub>off</sub>, y<sub>off</sub></dt><dd id="eqOffsets"></dd>
-      </dl>
-    </div>
+    <h2 id="eqHead">Same motion in ROEs</h2>
+    <dl class="readout" id="elemEq">
+      <dt>Δa</dt><dd id="eqDa"></dd>
+      <dt>Δθ<sub>0</sub></dt><dd id="eqDth"></dd>
+      <dt>Δi, ΔΩ</dt><dd id="eqDiW"></dd>
+      <dt>Δq<sub>1</sub>, Δq<sub>2</sub></dt><dd id="eqDq"></dd>
+    </dl>
+    <dl class="readout" id="hillEq" hidden>
+      <dt>x<sub>0</sub>, y<sub>0</sub>, z<sub>0</sub></dt><dd id="eqPos"></dd>
+      <dt>ẋ<sub>0</sub>, ẏ<sub>0</sub>, ż<sub>0</sub></dt><dd id="eqVel"></dd>
+    </dl>
 
     <h2>What the trajectory is</h2>
     <dl class="readout">
@@ -196,13 +224,14 @@
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ---------- state ----------
-  // Exactly one representation is authoritative at a time; the others are derived from it.
+  // state.hill is authoritative in Hill mode; state.elem in element mode. The other is derived.
   const state = {
     mode:'hill', period:90, orbits:2, tau:0, playing:false, showEll:true,
+    formation:'free', formationSense:1,
     tgt:{ inc:51.6, th0:0 },                                     // degrees
     hill:{ x0:0, y0:100, z0:0, xd0:0, yd0:0, zd0:0 },
     elem:{ da:0, dth:0, di:0, dW:0, dq1:0, dq2:0 },              // angles in degrees
-    traj:{ A0:0, alpha:0, B0:0, beta:0, xoff:0, yoff:100 },       // amplitudes/offsets in m, phases in degrees
+    cwconst:{ A0:0, alpha:0, B0:0, beta0:0, yoff:100, xoff:0 },    // amplitudes/offsets in m, phases in deg
   };
   // Cases match the MATLAB exercise.  Velocities that are intended to satisfy
   // an exact CW relation are computed from the current mean motion n.
@@ -242,40 +271,196 @@
     const C=h.z0/a, D=h.zd0/(a*N), di=C*s+D*c, dW=Math.abs(si)>1e-9?(D*s-C*c)/si:0, dth=a1/a-Math.cos(inc)*dW;
     return { da, dth:dth*r2d, di:di*r2d, dW:dW*r2d, dq1, dq2 };
   }
-  // ---------- geometric CW parameters <-> Hill state at t = 0 ----------
-  // x = -A0 cos(nt+alpha) + xoff
-  // y =  2A0 sin(nt+alpha) + yoff - (3/2)n*xoff*t
-  // z =   B0 sin(nt+beta)
-  function trajToHill(q){
-    const N=n(), al=q.alpha*d2r, be=q.beta*d2r;
+  function cwConstToHill(c){
+    const N=n(), al=c.alpha*d2r, be=c.beta0*d2r;
     return {
-      x0:  -q.A0*Math.cos(al) + q.xoff,
-      y0:   2*q.A0*Math.sin(al) + q.yoff,
-      z0:   q.B0*Math.sin(be),
-      xd0:  q.A0*N*Math.sin(al),
-      yd0:  2*q.A0*N*Math.cos(al) - 1.5*N*q.xoff,
-      zd0:  q.B0*N*Math.cos(be),
+      x0: -c.A0*Math.cos(al) + c.xoff,
+      y0:  2*c.A0*Math.sin(al) + c.yoff,
+      z0:  c.B0*Math.sin(be),
+      xd0: N*c.A0*Math.sin(al),
+      yd0: 2*N*c.A0*Math.cos(al) - 1.5*N*c.xoff,
+      zd0: N*c.B0*Math.cos(be)
     };
   }
-  function hillToTraj(h){
-    const N=n();
-    const C=3*h.x0+2*h.yd0/N, S=h.xd0/N;
-    const A0=Math.hypot(C,S), B0=Math.hypot(h.z0,h.zd0/N);
-    const alpha=A0>1e-12 ? Math.atan2(S,C)*r2d : 0;
-    const beta=B0>1e-12 ? Math.atan2(h.z0,h.zd0/N)*r2d : 0;
-    return {
-      A0, alpha, B0, beta,
-      xoff:4*h.x0+2*h.yd0/N,
-      yoff:h.y0-2*h.xd0/N,
-    };
+  function hillToCWConst(h){
+    const N=n(), xoff=4*h.x0+2*h.yd0/N;
+    const Ac=xoff-h.x0, As=h.xd0/N;
+    const A0=Math.hypot(Ac,As), alpha=Math.atan2(As,Ac)*r2d;
+    const B0=Math.hypot(h.z0,h.zd0/N), beta0=Math.atan2(h.z0,h.zd0/N)*r2d;
+    const yoff=h.y0-2*As;
+    return {A0,alpha,B0,beta0,yoff,xoff};
   }
-  function hillNow(){
-    if(state.mode==='hill') return state.hill;
-    if(state.mode==='elem') return elemToHill(state.elem);
-    return trajToHill(state.traj);
-  }
+  const hillNow = () => state.mode==='hill' ? state.hill : (state.mode==='elem' ? elemToHill(state.elem) : cwConstToHill(state.cwconst));
   const elemNow = () => state.mode==='elem' ? state.elem : hillToElem(hillNow());
-  const trajNow = () => state.mode==='traj' ? state.traj : hillToTraj(hillNow());
+  const cwNow = () => state.mode==='cw' ? state.cwconst : hillToCWConst(hillNow());
+
+  // CW constants implied by the circular-target ROEs.
+  // Convention used on the lecture slides:
+  //   x = -A0 cos(nt+alpha) + xoff
+  //   y =  2A0 sin(nt+alpha) + yoff - (3/2)n xoff t
+  //   z =  B0 sin(nt+beta0)
+  function roeToCW(e){
+    const a=sma(), inc=state.tgt.inc*d2r, th0=state.tgt.th0*d2r;
+    const dth=e.dth*d2r, di=e.di*d2r, dW=e.dW*d2r;
+    const de=Math.hypot(e.dq1,e.dq2);
+    const phiE=Math.atan2(e.dq2,e.dq1);
+    const di2=Math.sin(inc)*dW;
+    const diMag=Math.hypot(di,di2);
+    const phiI=Math.atan2(di2,di);
+    return {
+      de,
+      diMag,
+      A0:a*de,
+      alpha:th0-phiE,
+      B0:a*diMag,
+      beta0:th0-phiI,
+      yoff:a*(dth+Math.cos(inc)*dW),
+      xoff:e.da
+    };
+  }
+
+  // ---------- formation-design constraints ----------
+  const wrap180 = deg => {
+    let d=((deg+180)%360+360)%360-180;
+    return Math.abs(d)<1e-12 ? 0 : d;
+  };
+  function enforceFormation(mode=state.mode){
+    const f=state.formation;
+    if(f==='free') return;
+    const sense=state.formationSense;
+
+    if(mode==='cw'){
+      const c=state.cwconst;
+      if(f==='inplane'){
+        c.xoff=0; c.yoff=0; c.B0=0; c.beta0=0;
+      } else if(f==='alongtrack'){
+        const y=c.yoff;
+        Object.assign(c,{A0:0,alpha:0,B0:0,beta0:0,yoff:y,xoff:0});
+      } else if(f==='intrack'){
+        // In-track family: no in-plane oscillation and no radial offset/drift.
+        // The along-track offset and cross-track harmonic (amplitude + phase) remain free.
+        c.A0=0; c.alpha=0; c.xoff=0;
+      } else if(f==='circular' || f==='projected'){
+        const k=(f==='circular')?Math.sqrt(3):2;
+        c.xoff=0; c.yoff=0; c.B0=k*Math.abs(c.A0);
+        c.A0=Math.abs(c.A0);
+        c.beta0=wrap180(c.alpha+sense*90);
+      }
+      return;
+    }
+
+    if(mode==='hill'){
+      const h=state.hill, N=n();
+      if(f==='alongtrack'){
+        const y=h.y0;
+        Object.assign(h,{x0:0,y0:y,z0:0,xd0:0,yd0:0,zd0:0});
+      } else if(f==='intrack'){
+        // Keep y0, z0 and zdot0 free.  Enforce x(t)=0 and constant y(t).
+        h.x0=0; h.xd0=0; h.yd0=0;
+      } else if(f==='inplane' || f==='circular' || f==='projected'){
+        // x0 and xdot0 are the two free in-plane design parameters.
+        const x=h.x0, xd=h.xd0;
+        const A0=Math.hypot(-x,xd/N), alpha=Math.atan2(xd/N,-x)*r2d;
+        const c={A0,alpha,B0:0,beta0:0,yoff:0,xoff:0};
+        if(f==='circular' || f==='projected'){
+          const k=(f==='circular')?Math.sqrt(3):2;
+          c.B0=k*A0; c.beta0=wrap180(alpha+sense*90);
+        }
+        Object.assign(h,cwConstToHill(c));
+      }
+      return;
+    }
+
+    if(mode==='elem'){
+      const e=state.elem, inc=state.tgt.inc*d2r, si=Math.sin(inc), ci=Math.cos(inc);
+      if(f==='inplane'){
+        e.da=0; e.dth=0; e.di=0; e.dW=0;
+      } else if(f==='alongtrack'){
+        const dth=e.dth;
+        Object.assign(e,{da:0,dth,di:0,dW:0,dq1:0,dq2:0});
+      } else if(f==='intrack'){
+        // No in-plane eccentricity or semi-major-axis offset.  The along-track offset
+        // (Δθ0 together with ΔΩ) and relative inclination vector (Δi, ΔΩ) remain free.
+        e.da=0; e.dq1=0; e.dq2=0;
+      } else if(f==='circular' || f==='projected'){
+        // Δq1, Δq2 are free.  The relative inclination vector is slaved to the
+        // eccentricity vector so that B0/A0 and the ±90° phase relation are exact.
+        const de=Math.hypot(e.dq1,e.dq2), phiE=Math.atan2(e.dq2,e.dq1);
+        const k=(f==='circular')?Math.sqrt(3):2;
+        const phiI=phiE-sense*Math.PI/2, diMag=k*de;
+        const diRad=diMag*Math.cos(phiI), siDW=diMag*Math.sin(phiI);
+        const dWRad=Math.abs(si)>1e-9 ? siDW/si : 0;
+        e.da=0; e.di=diRad*r2d; e.dW=dWRad*r2d; e.dth=(-ci*dWRad)*r2d;
+      }
+    }
+  }
+
+  const formationLocked = {
+    hill:{
+      inplane:['y0','z0','yd0','zd0'],
+      alongtrack:['x0','z0','xd0','yd0','zd0'],
+      intrack:['x0','xd0','yd0'],
+      circular:['y0','z0','yd0','zd0'],
+      projected:['y0','z0','yd0','zd0']
+    },
+    elem:{
+      inplane:['da','dth','di','dW'],
+      alongtrack:['da','di','dW','dq1','dq2'],
+      intrack:['da','dq1','dq2'],
+      circular:['da','dth','di','dW'],
+      projected:['da','dth','di','dW']
+    },
+    cw:{
+      inplane:['B0c','betac','yoffc','xoffc'],
+      alongtrack:['A0c','alphac','B0c','betac','xoffc'],
+      intrack:['A0c','alphac','xoffc'],
+      circular:['B0c','betac','yoffc','xoffc'],
+      projected:['B0c','betac','yoffc','xoffc']
+    }
+  };
+
+  function fieldForInput(id){ return $(id)?.closest('.field') || null; }
+  function setLocked(ids,locked){
+    for(const id of ids){
+      const el=$(id); if(!el) continue;
+      el.disabled=locked;
+      const r=$(id+'r'); if(r) r.disabled=locked;
+      const fld=fieldForInput(id); if(fld) fld.classList.toggle('locked',locked);
+    }
+  }
+  function updateFormationLocks(){
+    const all={hill:['x0','y0','z0','xd0','yd0','zd0'], elem:['da','dth','di','dW','dq1','dq2'], cw:['A0c','alphac','B0c','betac','yoffc','xoffc']};
+    for(const ids of Object.values(all)) setLocked(ids,false);
+    const f=state.formation;
+    if(f!=='free') setLocked(formationLocked[state.mode][f]||[],true);
+    $('formationSenseRow').hidden=!(f==='circular'||f==='projected');
+
+    const names={inplane:'In-plane ellipse',alongtrack:'Along-track',intrack:'In-track',circular:'Circular',projected:'Projected circular'};
+    let txt='<span class="free">Free design:</span> all parameters are adjustable.';
+    if(f!=='free'){
+      const freeByMode={
+        hill:{inplane:'x₀ and ẋ₀',alongtrack:'y₀',intrack:'y₀, z₀ and ż₀',circular:'x₀ and ẋ₀',projected:'x₀ and ẋ₀'},
+        elem:{inplane:'Δq₁ and Δq₂',alongtrack:'Δθ₀',intrack:'Δθ₀, Δi and ΔΩ',circular:'Δq₁ and Δq₂',projected:'Δq₁ and Δq₂'},
+        cw:{inplane:'A₀ and α',alongtrack:'yoff',intrack:'yoff, B₀ and β₀',circular:'A₀ and α',projected:'A₀ and α'}
+      };
+      const geometry={
+        inplane:'B₀=0, xoff=yoff=0.',
+        alongtrack:'A₀=B₀=xoff=0; y is constant.',
+        intrack:'A₀=xoff=0; y is constant while the cross-track motion z(t)=B₀ sin(nt+β₀) has independently adjustable amplitude and phase.',
+        circular:'x²+y²+z²=R² with B₀=√3 A₀ and β=α±90°; R=2A₀.',
+        projected:'y²+z²=R² with B₀=2A₀ and β=α±90°; R=2A₀.'
+      };
+      txt=`<strong>${names[f]}:</strong> ${geometry[f]}<br><span class="free">Adjust:</span> ${freeByMode[state.mode][f]}. Fixed/dependent fields are locked.`;
+    }
+    $('formationNote').innerHTML=txt;
+  }
+
+  function applyFormationAndRefresh(){
+    enforceFormation(state.mode);
+    writeHill(); writeElem(); writeCW();
+    updateFormationLocks();
+    recompute();
+  }
 
   // ---------- CW solution ----------
   function cw(h,t){
@@ -317,19 +502,51 @@
     if($('closeHint')) $('closeHint').textContent=`Closed when ẏ₀ = −2n·x₀ = ${fm(-2*n()*state.hill.x0,3)} m/s`;
     if($('centerHint')) $('centerHint').textContent=`Centred when Δθ₀ = −ΔΩ cos i = ${fm(-state.elem.dW*Math.cos(state.tgt.inc*d2r),6)}°`;
     $('mdeg').textContent=fm(sma()*1e-3*d2r,0);
+
+    // ROE/CW-constant bridge shown on the ROE tab.
+    const Eroe=elemNow(), Cw=roeToCW(Eroe);
+    const wrapDeg = r => { let d=(r*r2d)%360; if(d>180)d-=360; if(d<=-180)d+=360; return d; };
+    if($('roeDe')) $('roeDe').textContent=Number(Cw.de.toPrecision(5)).toString();
+    if($('roeDiMag')) $('roeDiMag').textContent=(Cw.diMag*r2d).toLocaleString(undefined,{maximumFractionDigits:6})+'°';
+    if($('roeA0')) $('roeA0').textContent=fm(Cw.A0,1)+' m';
+    if($('roeAlpha')) $('roeAlpha').textContent=wrapDeg(Cw.alpha).toLocaleString(undefined,{maximumFractionDigits:3})+'°';
+    if($('roeB0')) $('roeB0').textContent=fm(Cw.B0,1)+' m';
+    if($('roeBeta')) $('roeBeta').textContent=wrapDeg(Cw.beta0).toLocaleString(undefined,{maximumFractionDigits:3})+'°';
+    if($('roeYoff')) $('roeYoff').textContent=fm(Cw.yoff,1)+' m';
+    if($('roeXoff')) $('roeXoff').textContent=fm(Cw.xoff,1)+' m';
+    if($('roeClass')){
+      const rc=$('roeClass'), xtol=0.5, ytol=0.5;
+      if(Math.abs(Cw.xoff)<xtol && Math.abs(Cw.yoff)<ytol){
+        rc.innerHTML='<strong>Centered + bounded.</strong> <i>x</i><sub>off</sub>=0 and <i>y</i><sub>off</sub>=0.'; rc.classList.add('closed');
+      } else if(Math.abs(Cw.xoff)<xtol){
+        rc.innerHTML='<strong>Bounded / no drift, not centered.</strong> <i>x</i><sub>off</sub>=0 but <i>y</i><sub>off</sub>≠0.'; rc.classList.add('closed');
+      } else {
+        rc.innerHTML='<strong>Drifting / unbounded.</strong> <i>x</i><sub>off</sub>=Δ<i>a</i>≠0, giving secular along-track drift −(3/2)<i>n x</i><sub>off</sub>.'; rc.classList.remove('closed');
+      }
+    }
+
+    if($('cwClass')){
+      const C=cwNow(), cc=$('cwClass'), xtol=0.5, ytol=0.5;
+      if(Math.abs(C.xoff)<xtol && Math.abs(C.yoff)<ytol){
+        cc.innerHTML='<strong>Centered + bounded.</strong> <i>x</i><sub>off</sub>=0 and <i>y</i><sub>off</sub>=0.'; cc.classList.add('closed');
+      } else if(Math.abs(C.xoff)<xtol){
+        cc.innerHTML='<strong>Bounded / no drift, not centered.</strong> <i>x</i><sub>off</sub>=0 but <i>y</i><sub>off</sub>≠0.'; cc.classList.add('closed');
+      } else {
+        cc.innerHTML='<strong>Drifting / unbounded.</strong> <i>x</i><sub>off</sub>≠0 gives secular along-track drift −(3/2)<i>n x</i><sub>off</sub>.'; cc.classList.remove('closed');
+      }
+    }
+
     const sig=(v,p=4)=>{ const x=Number(v.toPrecision(p)); return Math.abs(x)<1e-12?'0':String(x); };
-    const E=elemNow(), Q=trajNow();
-    $('eqPos').textContent=`${fm(H.x0,0)}, ${fm(H.y0,0)}, ${fm(H.z0,0)} m`;
-    $('eqVel').textContent=`${fm(H.xd0,3)}, ${fm(H.yd0,3)}, ${fm(H.zd0,3)} m/s`;
-    $('eqDa').textContent=fm(E.da,1)+' m';
-    $('eqDth').textContent=sig(E.dth)+'°';
-    $('eqDiW').textContent=sig(E.di)+'°, '+sig(E.dW)+'°';
-    $('eqDq').textContent=sig(E.dq1)+', '+sig(E.dq2);
-    $('eqAalpha').textContent=`${fm(Q.A0,1)} m, ${fm(Q.alpha,2)}°`;
-    $('eqBbeta').textContent=`${fm(Q.B0,1)} m, ${fm(Q.beta,2)}°`;
-    $('eqOffsets').textContent=`${fm(Q.xoff,1)} m, ${fm(Q.yoff,1)} m`;
-    $('trajSecRate').textContent=fm(-1.5*n()*Q.xoff,4)+' m/s';
-    $('trajWalkOrbit').textContent=fm(-3*Math.PI*Q.xoff,1)+' m/orbit along y';
+    if(state.mode==='elem'){
+      $('eqPos').textContent=`${fm(H.x0,0)}, ${fm(H.y0,0)}, ${fm(H.z0,0)} m`;
+      $('eqVel').textContent=`${fm(H.xd0,3)}, ${fm(H.yd0,3)}, ${fm(H.zd0,3)} m/s`;
+    } else {
+      const E=elemNow();
+      $('eqDa').textContent=fm(E.da,1)+' m';
+      $('eqDth').textContent=sig(E.dth)+'°';
+      $('eqDiW').textContent=sig(E.di)+'°, '+sig(E.dW)+'°';
+      $('eqDq').textContent=sig(E.dq1)+', '+sig(E.dq2);
+    }
     const v=$('verdict'); v.classList.remove('closed');
     const elemNote = state.mode==='elem' ? ' In element terms: <i>a</i><sub>2</sub> = Δ<i>a</i>/2, so bounded means Δ<i>a</i> = 0.' : '';
     let msg;
@@ -451,44 +668,30 @@
   // ---------- inputs ----------
   const sig=(v,p=4)=>{ const x=Number(v.toPrecision(p)); return Math.abs(x)<1e-12?0:x; };
   function writeHill(){ for(const k of ['x0','y0','z0','xd0','yd0','zd0']){ $(k).value=sig(state.hill[k],6); $(k+'r').value=state.hill[k]; } }
-  function writeElem(){ for(const k of ['da','dth','di','dW','dq1','dq2']) $(k).value=sig(state.elem[k]); }
-  function writeTraj(){
-    for(const k of ['A0','alpha','B0','beta','xoff','yoff']){
-      $(k).value=sig(state.traj[k],6);
-      const r=$(k+'r');
-      if(r) r.value=state.traj[k];
-    }
+  function writeElem(){ for(const k of ['da','dth','di','dW','dq1','dq2']){ $(k).value=sig(state.elem[k],6); const r=$(k+'r'); if(r) r.value=state.elem[k]; } }
+  function writeCW(){
+    const map={A0:'A0c',alpha:'alphac',B0:'B0c',beta0:'betac',yoff:'yoffc',xoff:'xoffc'};
+    for(const [k,id] of Object.entries(map)){ $(id).value=sig(state.cwconst[k],6); $(id+'r').value=state.cwconst[k]; }
   }
-  function clearCaseSelection(){ document.querySelectorAll('#cases button').forEach(b=>b.setAttribute('aria-pressed','false')); }
   function bindHill(key){
     const num=$(key), rng=$(key+'r');
-    num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)){ clearCaseSelection(); state.hill[key]=v; rng.value=v; recompute(); } });
-    rng.addEventListener('input', ()=>{ const v=parseFloat(rng.value); clearCaseSelection(); state.hill[key]=v; num.value=v; recompute(); });
+    num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)){ state.hill[key]=v; rng.value=v; if(state.formation!=='free') enforceFormation('hill'); writeHill(); recompute(); } });
+    rng.addEventListener('input', ()=>{ const v=parseFloat(rng.value); state.hill[key]=v; num.value=v; if(state.formation!=='free') enforceFormation('hill'); writeHill(); recompute(); });
+  }
+  function bindElem(key){
+    const num=$(key), rng=$(key+'r');
+    num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)){ state.elem[key]=v; rng.value=v; if(state.formation!=='free') enforceFormation('elem'); writeElem(); recompute(); } });
+    rng.addEventListener('input', ()=>{ const v=parseFloat(rng.value); state.elem[key]=v; num.value=v; if(state.formation!=='free') enforceFormation('elem'); writeElem(); recompute(); });
+  }
+  function bindCW(key,id){
+    const num=$(id), rng=$(id+'r');
+    num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)){ state.cwconst[key]=v; rng.value=v; if(state.formation!=='free') enforceFormation('cw'); writeCW(); recompute(); } });
+    rng.addEventListener('input', ()=>{ const v=parseFloat(rng.value); state.cwconst[key]=v; num.value=v; if(state.formation!=='free') enforceFormation('cw'); writeCW(); recompute(); });
   }
   ['x0','y0','z0','xd0','yd0','zd0'].forEach(bindHill);
-  ['da','dth','di','dW','dq1','dq2'].forEach(k=>$(k).addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ clearCaseSelection(); state.elem[k]=v; recompute(); } }));
-  function bindTraj(key){
-    const num=$(key), rng=$(key+'r');
-    num.addEventListener('input', ()=>{
-      let v=parseFloat(num.value);
-      if(!isNaN(v)){
-        clearCaseSelection();
-        if(key==='A0'||key==='B0'){ v=Math.max(0,v); num.value=v; }
-        state.traj[key]=v;
-        rng.value=v;
-        recompute();
-      }
-    });
-    rng.addEventListener('input', ()=>{
-      const v=parseFloat(rng.value);
-      clearCaseSelection();
-      state.traj[key]=v;
-      num.value=v;
-      recompute();
-    });
-  }
-  ['A0','alpha','B0','beta','xoff','yoff'].forEach(bindTraj);
-  ['inc','th0'].forEach(k=>$(k).addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ state.tgt[k]=v; recompute(); } }));
+  ['da','dth','di','dW','dq1','dq2'].forEach(bindElem);
+  [['A0','A0c'],['alpha','alphac'],['B0','B0c'],['beta0','betac'],['yoff','yoffc'],['xoff','xoffc']].forEach(([k,id])=>bindCW(k,id));
+  ['inc','th0'].forEach(k=>$(k).addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ state.tgt[k]=v; if(state.formation!=='free') enforceFormation(state.mode); writeHill(); writeElem(); writeCW(); recompute(); } }));
   $('inc').value=state.tgt.inc; $('th0').value=state.tgt.th0;
 
   function selectedCaseIndex(){
@@ -498,24 +701,17 @@
   }
   function refreshSelectedCaseForNewOrbit(){
     const i=selectedCaseIndex();
-    if(i!==null){
-      Object.assign(state.hill, getCases()[i]);
-      state.elem=hillToElem(state.hill);
-      state.traj=hillToTraj(state.hill);
-    } else {
-      const h=hillNow();
-      if(state.mode==='hill') state.hill={...h};
-      if(state.mode==='elem') state.elem=hillToElem(h);
-      if(state.mode==='traj') state.traj=hillToTraj(h);
-    }
-    writeHill(); writeElem(); writeTraj();
+    if(i!==null) Object.assign(state.hill, getCases()[i]);
+    if(state.mode==='elem' && i!==null) state.elem=hillToElem(state.hill);
+    if(state.mode==='cw' && i!==null) state.cwconst=hillToCWConst(state.hill);
+    writeHill(); writeElem(); writeCW();
   }
 
   // orbit: n, period, a linked
   const writeOrbit=(skip)=>{ if(skip!=='nin') $('nin').value=Number(n().toPrecision(4)); if(skip!=='period') $('period').value=Number(state.period.toPrecision(5)); if(skip!=='sma') $('sma').value=Number((sma()/1e3).toPrecision(5)); };
-  $('period').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=v; writeOrbit('period'); refreshSelectedCaseForNewOrbit(); recompute(); } });
-  $('nin').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=2*Math.PI/v/60; writeOrbit('nin'); refreshSelectedCaseForNewOrbit(); recompute(); } });
-  $('sma').addEventListener('input', e=>{ const v=parseFloat(e.target.value)*1e3; if(v>0){ state.period=2*Math.PI*Math.sqrt(v*v*v/MU)/60; writeOrbit('sma'); refreshSelectedCaseForNewOrbit(); recompute(); } });
+  $('period').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=v; writeOrbit('period'); if(state.formation==='free') refreshSelectedCaseForNewOrbit(); else { enforceFormation(state.mode); writeHill(); writeElem(); writeCW(); } recompute(); } });
+  $('nin').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=2*Math.PI/v/60; writeOrbit('nin'); if(state.formation==='free') refreshSelectedCaseForNewOrbit(); else { enforceFormation(state.mode); writeHill(); writeElem(); writeCW(); } recompute(); } });
+  $('sma').addEventListener('input', e=>{ const v=parseFloat(e.target.value)*1e3; if(v>0){ state.period=2*Math.PI*Math.sqrt(v*v*v/MU)/60; writeOrbit('sma'); if(state.formation==='free') refreshSelectedCaseForNewOrbit(); else { enforceFormation(state.mode); writeHill(); writeElem(); writeCW(); } recompute(); } });
   $('orbits').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.orbits=v; recompute(); } });
   $('time').addEventListener('input', e=>{ state.tau=parseFloat(e.target.value); updateReadouts(); draw(); });
   $('showEll').addEventListener('change', e=>{ state.showEll=e.target.checked; draw(); });
@@ -527,45 +723,60 @@
   if(SHOW_CENTER_BUTTON){ $('centerBtn').addEventListener('click', ()=>{ state.elem.dth=-state.elem.dW*Math.cos(state.tgt.inc*d2r); writeElem(); recompute(); }); }
   else { $('centerBtn').remove(); $('centerHint').remove(); }
 
-  // mode switch: preserve the current physical motion, then make the chosen representation authoritative
+  // mode switch: preserve the current physical motion, then express it in the selected coordinates.
   function setMode(mode){
     if(mode===state.mode) return;
-    const h=hillNow();
-    if(mode==='hill') state.hill={...h};
-    else if(mode==='elem') state.elem=hillToElem(h);
-    else state.traj=hillToTraj(h);
+    const Hcur=hillNow();
+    if(mode==='hill') state.hill={...Hcur};
+    if(mode==='elem') state.elem=hillToElem(Hcur);
+    if(mode==='cw') state.cwconst=hillToCWConst(Hcur);
     state.mode=mode;
     $('modeHill').setAttribute('aria-pressed', mode==='hill');
     $('modeElem').setAttribute('aria-pressed', mode==='elem');
-    $('modeTraj').setAttribute('aria-pressed', mode==='traj');
+    $('modeCW').setAttribute('aria-pressed', mode==='cw');
     $('hillFields').hidden = mode!=='hill';
     $('elemFields').hidden = mode!=='elem';
-    $('trajFields').hidden = mode!=='traj';
-    $('equivHill').hidden = mode==='hill';
-    $('equivElem').hidden = mode==='elem';
-    $('equivTraj').hidden = mode==='traj';
-    writeHill(); writeElem(); writeTraj(); recompute();
+    $('cwFields').hidden = mode!=='cw';
+    $('hillEq').hidden = mode!=='elem';
+    $('elemEq').hidden = mode==='elem';
+    $('eqHead').textContent = mode==='elem' ? 'Same motion as a Hill-frame state' : 'Same motion in ROEs';
+    if(state.formation!=='free') enforceFormation(mode);
+    writeHill(); writeElem(); writeCW(); updateFormationLocks(); recompute();
   }
   function loadCase(i){
+    state.formation='free';
+    document.querySelector('input[name="formation"][value="free"]').checked=true;
     Object.assign(state.hill, getCases()[i]);
-    state.elem=hillToElem(state.hill);
-    state.traj=hillToTraj(state.hill);
     if(state.mode==='elem') state.elem=hillToElem(state.hill);
-    if(state.mode==='traj') state.traj=hillToTraj(state.hill);
+    if(state.mode==='cw') state.cwconst=hillToCWConst(state.hill);
     state.tau=0; $('time').value=0;
     document.querySelectorAll('#cases button').forEach((b,j)=>b.setAttribute('aria-pressed', j===i));
-    writeHill(); writeElem(); writeTraj(); recompute();
+    writeHill(); writeElem(); writeCW(); updateFormationLocks(); recompute();
   }
+  document.querySelectorAll('input[name="formation"]').forEach(r=>r.addEventListener('change', e=>{
+    if(!e.target.checked) return;
+    // First express the current physical trajectory in the active coordinates, then impose the chosen design.
+    state.formation=e.target.value;
+    enforceFormation(state.mode);
+    writeHill(); writeElem(); writeCW(); updateFormationLocks(); recompute();
+  }));
+  $('formationSense').addEventListener('change', e=>{
+    state.formationSense=parseInt(e.target.value,10)===-1?-1:1;
+    if(state.formation==='circular'||state.formation==='projected') applyFormationAndRefresh();
+  });
+
   $('modeHill').addEventListener('click', ()=>setMode('hill'));
   $('modeElem').addEventListener('click', ()=>setMode('elem'));
-  $('modeTraj').addEventListener('click', ()=>setMode('traj'));
+  $('modeCW').addEventListener('click', ()=>setMode('cw'));
   if(SHOW_CASES){ getCases().forEach((c,i)=>{ const b=document.createElement('button'); b.textContent='Case '+(i+1); b.addEventListener('click',()=>loadCase(i)); $('cases').appendChild(b); }); }
   else { $('casesHead').remove(); $('cases').remove(); }
 
   // ---------- init ----------
   new ResizeObserver(draw).observe(canvas.parentElement);
   writeOrbit();
-  if(SHOW_CASES) loadCase(0); else { state.elem=hillToElem(state.hill); state.traj=hillToTraj(state.hill); writeHill(); writeElem(); writeTraj(); recompute(); }
+  writeCW();
+  $('formationSense').value=String(state.formationSense);
+  if(SHOW_CASES) loadCase(0); else { writeHill(); writeElem(); writeCW(); updateFormationLocks(); recompute(); }
   if(!reduce) setPlaying(true);
 })();
 </script>
