@@ -167,14 +167,19 @@
     hill:{ x0:0, y0:100, z0:0, xd0:0, yd0:0, zd0:0 },
     elem:{ da:0, dth:0, di:0, dW:0, dq1:0, dq2:0 },              // angles in degrees
   };
-  const cases = [
-    {x0:0,    y0:100,  z0:0, xd0:0,     yd0:0,      zd0:0},  // stationary hold, 100 m ahead
-    {x0:300,  y0:0,    z0:0, xd0:0,     yd0:-0.698, zd0:0},  // ellipse centred on the target
-    {x0:150,  y0:600,  z0:0, xd0:0,     yd0:-0.349, zd0:0},  // leading ellipse, 300-900 m ahead
-    {x0:0,    y0:-300, z0:0, xd0:0.116, yd0:0,      zd0:0},  // trailing ellipse, 300-700 m behind
-    {x0:0,    y0:0,    z0:0, xd0:0.3,   yd0:0,      zd0:0},  // radial push, ellipse through the target
-    {x0:200,  y0:0,    z0:0, xd0:0,     yd0:0,      zd0:0},  // unbounded, drifts back 7.5 km per orbit
-  ];
+  // Cases match the MATLAB exercise.  Velocities that are intended to satisfy
+  // an exact CW relation are computed from the current mean motion n.
+  function getCases(){
+    const N = n();
+    return [
+      {x0:0,   y0:100,  z0:0, xd0:0,       yd0:0,          zd0:0}, // 1: stationary hold, 100 m ahead
+      {x0:300, y0:0,    z0:0, xd0:0,       yd0:-2*N*300,   zd0:0}, // 2: centred closed ellipse
+      {x0:150, y0:-600, z0:0, xd0:0,       yd0:-2*N*150,   zd0:0}, // 3: trailing closed ellipse
+      {x0:0,   y0:300,  z0:0, xd0:-100*N,  yd0:0,          zd0:0}, // 4: leading closed ellipse (300 to 700 m)
+      {x0:0,   y0:0,    z0:0, xd0:0.3,     yd0:0,          zd0:0}, // 5: closed ellipse tangent to target
+      {x0:200, y0:0,    z0:0, xd0:0,       yd0:0,          zd0:0}, // 6: non-closed / drifting ellipse
+    ];
+  }
 
   // ---------- orbit ----------
   const n = () => 2*Math.PI/(state.period*60);
@@ -257,11 +262,36 @@
     const v=$('verdict'); v.classList.remove('closed');
     const elemNote = state.mode==='elem' ? ' In element terms: <i>a</i><sub>2</sub> = Δ<i>a</i>/2, so bounded means Δ<i>a</i> = 0.' : '';
     let msg;
-    if(a2z&&a3z&&zz){ msg='<strong>Stationary.</strong> The chaser holds its position relative to the target.'; v.classList.add('closed'); }
-    else if(a2z&&a3z){ msg='<strong>Cross-track oscillation only.</strong> Fixed in-plane position; the chaser swings through <i>z</i> once per orbit.'; v.classList.add('closed'); }
-    else if(a3z){ msg='<strong>Straight-line drift.</strong> No in-plane ellipse; the chaser slides along <i>y</i> at constant rate.'+elemNote; }
-    else if(a2z){ msg='<strong>Closed ellipse.</strong> <i>a</i><sub>2</sub> = 0, so the centre stays put.'+(zz?'':' Cross-track motion adds a tilt out of the plane.'); v.classList.add('closed'); }
-    else { msg='<strong>Rolling ellipse.</strong> The centre drifts along <i>y</i> at 3<i>a</i><sub>2</sub><i>n</i>, so the ellipse never closes.'+elemNote; }
+    if(a2z&&a3z&&zz){
+      msg='<strong>Stationary.</strong> The chaser holds its in-plane position relative to the target.';
+      v.classList.add('closed');
+    }
+    else if(a2z&&a3z){
+      msg='<strong>Cross-track oscillation only.</strong> Fixed in-plane position; the chaser oscillates through <i>z</i> once per orbit.';
+      v.classList.add('closed');
+    }
+    else if(a3z){
+      msg='<strong>Straight-line drift.</strong> No in-plane ellipse; the chaser slides along <i>y</i> at constant rate.'+elemNote;
+    }
+    else if(a2z){
+      // For a closed in-plane orbit, y ranges from a1-2a3 to a1+2a3.
+      const tol = 0.5; // metres; only used for the textual classification
+      const lo = P.a1 - 2*P.a3, hi = P.a1 + 2*P.a3;
+      let geom;
+      if(Math.abs(P.a1) < tol) geom = 'The ellipse is centred on the target.';
+      else if(Math.abs(hi) < tol) geom = 'The ellipse is tangent to the target from behind.';
+      else if(Math.abs(lo) < tol) geom = 'The ellipse is tangent to the target from ahead.';
+      else if(hi < 0) geom = 'The chaser remains entirely behind (trailing) the target.';
+      else if(lo > 0) geom = 'The chaser remains entirely ahead of (leading) the target.';
+      else geom = 'The ellipse surrounds the target.';
+      msg='<strong>Closed ellipse.</strong> <i>a</i><sub>2</sub> = 0. '+geom+(zz?'':' Cross-track motion adds a tilt out of the plane.');
+      v.classList.add('closed');
+    }
+    else {
+      msg='<strong>Non-closed / drifting ellipse.</strong> The instantaneous ellipse centre is '
+        + '(<i>x</i><sub>c</sub>, <i>y</i><sub>c</sub>) = (2<i>a</i><sub>2</sub>, '
+        + '<i>a</i><sub>1</sub> − 3<i>a</i><sub>2</sub><i>n</i><i>t</i>), so the motion does not close.'+elemNote;
+    }
     v.innerHTML=msg;
     const T=state.orbits*state.period*60;
     $('tlabel').textContent=`t = ${fm(state.tau*state.orbits,2)} orbits  (${fm(state.tau*T/60,1)} min)`;
@@ -361,11 +391,23 @@
   ['inc','th0'].forEach(k=>$(k).addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ state.tgt[k]=v; recompute(); } }));
   $('inc').value=state.tgt.inc; $('th0').value=state.tgt.th0;
 
+  function selectedCaseIndex(){
+    const buttons=[...document.querySelectorAll('#cases button')];
+    const i=buttons.findIndex(b=>b.getAttribute('aria-pressed')==='true');
+    return i>=0 ? i : null;
+  }
+  function refreshSelectedCaseForNewOrbit(){
+    const i=selectedCaseIndex();
+    if(i!==null) Object.assign(state.hill, getCases()[i]);
+    if(state.mode==='elem' && i!==null) state.elem=hillToElem(state.hill);
+    writeHill(); writeElem();
+  }
+
   // orbit: n, period, a linked
   const writeOrbit=(skip)=>{ if(skip!=='nin') $('nin').value=Number(n().toPrecision(4)); if(skip!=='period') $('period').value=Number(state.period.toPrecision(5)); if(skip!=='sma') $('sma').value=Number((sma()/1e3).toPrecision(5)); };
-  $('period').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=v; writeOrbit('period'); recompute(); } });
-  $('nin').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=2*Math.PI/v/60; writeOrbit('nin'); recompute(); } });
-  $('sma').addEventListener('input', e=>{ const v=parseFloat(e.target.value)*1e3; if(v>0){ state.period=2*Math.PI*Math.sqrt(v*v*v/MU)/60; writeOrbit('sma'); recompute(); } });
+  $('period').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=v; writeOrbit('period'); refreshSelectedCaseForNewOrbit(); recompute(); } });
+  $('nin').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=2*Math.PI/v/60; writeOrbit('nin'); refreshSelectedCaseForNewOrbit(); recompute(); } });
+  $('sma').addEventListener('input', e=>{ const v=parseFloat(e.target.value)*1e3; if(v>0){ state.period=2*Math.PI*Math.sqrt(v*v*v/MU)/60; writeOrbit('sma'); refreshSelectedCaseForNewOrbit(); recompute(); } });
   $('orbits').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.orbits=v; recompute(); } });
   $('time').addEventListener('input', e=>{ state.tau=parseFloat(e.target.value); updateReadouts(); draw(); });
   $('showEll').addEventListener('change', e=>{ state.showEll=e.target.checked; draw(); });
@@ -389,7 +431,7 @@
     writeHill(); writeElem(); recompute();
   }
   function loadCase(i){
-    Object.assign(state.hill, cases[i]);
+    Object.assign(state.hill, getCases()[i]);
     if(state.mode==='elem') state.elem=hillToElem(state.hill);
     state.tau=0; $('time').value=0;
     document.querySelectorAll('#cases button').forEach((b,j)=>b.setAttribute('aria-pressed', j===i));
@@ -397,7 +439,7 @@
   }
   $('modeHill').addEventListener('click', ()=>setMode('hill'));
   $('modeElem').addEventListener('click', ()=>setMode('elem'));
-  if(SHOW_CASES){ cases.forEach((c,i)=>{ const b=document.createElement('button'); b.textContent='Case '+(i+1); b.addEventListener('click',()=>loadCase(i)); $('cases').appendChild(b); }); }
+  if(SHOW_CASES){ getCases().forEach((c,i)=>{ const b=document.createElement('button'); b.textContent='Case '+(i+1); b.addEventListener('click',()=>loadCase(i)); $('cases').appendChild(b); }); }
   else { $('casesHead').remove(); $('cases').remove(); }
 
   // ---------- init ----------
