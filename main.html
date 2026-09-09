@@ -22,9 +22,10 @@
   h2{font-size:13px;font-weight:600;margin:12px 0 6px;color:var(--slate)}
   h2:first-child{margin-top:0}
   .seg{display:flex;gap:0;margin-bottom:4px}
-  .seg button{flex:1;border-radius:0}
+  .seg button{flex:1;border-radius:0;min-width:0;padding-left:7px;padding-right:7px}
+  .seg button+button{margin-left:-1px}
   .seg button:first-child{border-radius:4px 0 0 4px}
-  .seg button:last-child{border-radius:0 4px 4px 0;margin-left:-1px}
+  .seg button:last-child{border-radius:0 4px 4px 0}
   .cases{display:flex;flex-wrap:wrap;gap:6px}
   button{font:inherit;color:var(--navy);background:var(--white);border:1px solid var(--rule);border-radius:4px;padding:5px 10px;cursor:pointer}
   button:hover{border-color:var(--navy)}
@@ -60,14 +61,15 @@
 <body>
 <header>
   <h1>Free-motion trajectories</h1>
-  <p>Clohessy–Wiltshire relative motion about a circular target. Describe the chaser by its Hill-frame state or by orbit element differences, and see where it goes.</p>
+  <p>Clohessy–Wiltshire relative motion about a circular target. Describe the chaser by its Hill-frame state, orbit element differences, or geometric CW trajectory parameters, and see where it goes.</p>
 </header>
 <main>
   <aside>
     <h2>Describe the chaser by</h2>
     <div class="seg">
       <button id="modeHill" aria-pressed="true">Hill-frame state</button>
-      <button id="modeElem" aria-pressed="false">Orbit element differences</button>
+      <button id="modeElem" aria-pressed="false">Orbit elements</button>
+      <button id="modeTraj" aria-pressed="false">CW parameters</button>
     </div>
 
     <h2 id="casesHead">Start from a case</h2>
@@ -101,6 +103,27 @@
       <p class="hint" id="centerHint"></p>
     </div>
 
+    <div id="trajFields" hidden>
+      <h2>Geometric CW trajectory parameters</h2>
+      <p class="hint" style="margin:0 0 6px">
+        <i>x</i> = −<i>A</i><sub>0</sub> cos(<i>nt</i> + α) + <i>x</i><sub>off</sub>,
+        <i>y</i> = 2<i>A</i><sub>0</sub> sin(<i>nt</i> + α) + <i>y</i><sub>off</sub> − 3<i>n</i><i>x</i><sub>off</sub><i>t</i>/2,
+        <i>z</i> = <i>B</i><sub>0</sub> sin(<i>nt</i> + β).
+      </p>
+      <div class="field"><label for="A0">A<sub>0</sub></label><input type="range" id="A0r" min="0" max="1000" step="5"><input type="number" id="A0" min="0" step="any" aria-label="A0 in metres"></div>
+      <div class="field"><label for="alpha">α</label><input type="range" id="alphar" min="-180" max="180" step="1"><input type="number" id="alpha" step="any" aria-label="alpha in degrees"></div>
+      <div class="field"><label for="B0">B<sub>0</sub></label><input type="range" id="B0r" min="0" max="1000" step="5"><input type="number" id="B0" min="0" step="any" aria-label="B0 in metres"></div>
+      <div class="field"><label for="beta">β</label><input type="range" id="betar" min="-180" max="180" step="1"><input type="number" id="beta" step="any" aria-label="beta in degrees"></div>
+      <div class="field"><label for="xoff">x<sub>off</sub></label><input type="range" id="xoffr" min="-1000" max="1000" step="5"><input type="number" id="xoff" step="any" aria-label="x offset in metres"></div>
+      <div class="field"><label for="yoff">y<sub>off</sub></label><input type="range" id="yoffr" min="-1500" max="1500" step="5"><input type="number" id="yoff" step="any" aria-label="y offset in metres"></div>
+      <p class="hint" style="margin-top:3px">A<sub>0</sub>, B<sub>0</sub>, x<sub>off</sub>, and y<sub>off</sub> are in metres; α and β are in degrees. You can use either the slider or the number box.</p>
+      <dl class="readout" style="margin-top:7px">
+        <dt>ẏ<sub>sec</sub></dt><dd id="trajSecRate"></dd>
+        <dt>walk/orbit</dt><dd id="trajWalkOrbit"></dd>
+      </dl>
+      <p class="hint">Set <i>x</i><sub>off</sub> = 0 for a bounded CW ellipse. Nonzero <i>x</i><sub>off</sub> translates the ellipse radially and makes its centre walk along-track.</p>
+    </div>
+
     <h2>Target orbit</h2>
     <div class="g">
       <div><label for="nin" class="u">Mean motion <i>n</i>, rad/s</label><input type="number" id="nin" step="any"></div>
@@ -112,17 +135,30 @@
     </div>
     <p class="hint">Edit any of <i>n</i>, period, or <i>a</i>; the others follow (<i>n</i>² <i>a</i>³ = μ). <i>i</i> and <i>θ</i><sub>0</sub> only matter for the element-difference description.</p>
 
-    <h2 id="eqHead">Same motion in element differences</h2>
-    <dl class="readout" id="elemEq">
-      <dt>Δa</dt><dd id="eqDa"></dd>
-      <dt>Δθ<sub>0</sub></dt><dd id="eqDth"></dd>
-      <dt>Δi, ΔΩ</dt><dd id="eqDiW"></dd>
-      <dt>Δq<sub>1</sub>, Δq<sub>2</sub></dt><dd id="eqDq"></dd>
-    </dl>
-    <dl class="readout" id="hillEq" hidden>
-      <dt>x<sub>0</sub>, y<sub>0</sub>, z<sub>0</sub></dt><dd id="eqPos"></dd>
-      <dt>ẋ<sub>0</sub>, ẏ<sub>0</sub>, ż<sub>0</sub></dt><dd id="eqVel"></dd>
-    </dl>
+    <div id="equivHill" hidden>
+      <h2>Same motion as a Hill-frame state</h2>
+      <dl class="readout" id="hillEq">
+        <dt>x<sub>0</sub>, y<sub>0</sub>, z<sub>0</sub></dt><dd id="eqPos"></dd>
+        <dt>ẋ<sub>0</sub>, ẏ<sub>0</sub>, ż<sub>0</sub></dt><dd id="eqVel"></dd>
+      </dl>
+    </div>
+    <div id="equivElem">
+      <h2>Same motion in element differences</h2>
+      <dl class="readout" id="elemEq">
+        <dt>Δa</dt><dd id="eqDa"></dd>
+        <dt>Δθ<sub>0</sub></dt><dd id="eqDth"></dd>
+        <dt>Δi, ΔΩ</dt><dd id="eqDiW"></dd>
+        <dt>Δq<sub>1</sub>, Δq<sub>2</sub></dt><dd id="eqDq"></dd>
+      </dl>
+    </div>
+    <div id="equivTraj">
+      <h2>Same motion in CW parameters</h2>
+      <dl class="readout" id="trajEq">
+        <dt>A<sub>0</sub>, α</dt><dd id="eqAalpha"></dd>
+        <dt>B<sub>0</sub>, β</dt><dd id="eqBbeta"></dd>
+        <dt>x<sub>off</sub>, y<sub>off</sub></dt><dd id="eqOffsets"></dd>
+      </dl>
+    </div>
 
     <h2>What the trajectory is</h2>
     <dl class="readout">
@@ -160,12 +196,13 @@
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ---------- state ----------
-  // state.hill is authoritative in Hill mode; state.elem in element mode. The other is derived.
+  // Exactly one representation is authoritative at a time; the others are derived from it.
   const state = {
     mode:'hill', period:90, orbits:2, tau:0, playing:false, showEll:true,
     tgt:{ inc:51.6, th0:0 },                                     // degrees
     hill:{ x0:0, y0:100, z0:0, xd0:0, yd0:0, zd0:0 },
     elem:{ da:0, dth:0, di:0, dW:0, dq1:0, dq2:0 },              // angles in degrees
+    traj:{ A0:0, alpha:0, B0:0, beta:0, xoff:0, yoff:100 },       // amplitudes/offsets in m, phases in degrees
   };
   // Cases match the MATLAB exercise.  Velocities that are intended to satisfy
   // an exact CW relation are computed from the current mean motion n.
@@ -205,8 +242,40 @@
     const C=h.z0/a, D=h.zd0/(a*N), di=C*s+D*c, dW=Math.abs(si)>1e-9?(D*s-C*c)/si:0, dth=a1/a-Math.cos(inc)*dW;
     return { da, dth:dth*r2d, di:di*r2d, dW:dW*r2d, dq1, dq2 };
   }
-  const hillNow = () => state.mode==='hill' ? state.hill : elemToHill(state.elem);
-  const elemNow = () => state.mode==='elem' ? state.elem : hillToElem(state.hill);
+  // ---------- geometric CW parameters <-> Hill state at t = 0 ----------
+  // x = -A0 cos(nt+alpha) + xoff
+  // y =  2A0 sin(nt+alpha) + yoff - (3/2)n*xoff*t
+  // z =   B0 sin(nt+beta)
+  function trajToHill(q){
+    const N=n(), al=q.alpha*d2r, be=q.beta*d2r;
+    return {
+      x0:  -q.A0*Math.cos(al) + q.xoff,
+      y0:   2*q.A0*Math.sin(al) + q.yoff,
+      z0:   q.B0*Math.sin(be),
+      xd0:  q.A0*N*Math.sin(al),
+      yd0:  2*q.A0*N*Math.cos(al) - 1.5*N*q.xoff,
+      zd0:  q.B0*N*Math.cos(be),
+    };
+  }
+  function hillToTraj(h){
+    const N=n();
+    const C=3*h.x0+2*h.yd0/N, S=h.xd0/N;
+    const A0=Math.hypot(C,S), B0=Math.hypot(h.z0,h.zd0/N);
+    const alpha=A0>1e-12 ? Math.atan2(S,C)*r2d : 0;
+    const beta=B0>1e-12 ? Math.atan2(h.z0,h.zd0/N)*r2d : 0;
+    return {
+      A0, alpha, B0, beta,
+      xoff:4*h.x0+2*h.yd0/N,
+      yoff:h.y0-2*h.xd0/N,
+    };
+  }
+  function hillNow(){
+    if(state.mode==='hill') return state.hill;
+    if(state.mode==='elem') return elemToHill(state.elem);
+    return trajToHill(state.traj);
+  }
+  const elemNow = () => state.mode==='elem' ? state.elem : hillToElem(hillNow());
+  const trajNow = () => state.mode==='traj' ? state.traj : hillToTraj(hillNow());
 
   // ---------- CW solution ----------
   function cw(h,t){
@@ -249,16 +318,18 @@
     if($('centerHint')) $('centerHint').textContent=`Centred when Δθ₀ = −ΔΩ cos i = ${fm(-state.elem.dW*Math.cos(state.tgt.inc*d2r),6)}°`;
     $('mdeg').textContent=fm(sma()*1e-3*d2r,0);
     const sig=(v,p=4)=>{ const x=Number(v.toPrecision(p)); return Math.abs(x)<1e-12?'0':String(x); };
-    if(state.mode==='elem'){
-      $('eqPos').textContent=`${fm(H.x0,0)}, ${fm(H.y0,0)}, ${fm(H.z0,0)} m`;
-      $('eqVel').textContent=`${fm(H.xd0,3)}, ${fm(H.yd0,3)}, ${fm(H.zd0,3)} m/s`;
-    } else {
-      const E=elemNow();
-      $('eqDa').textContent=fm(E.da,1)+' m';
-      $('eqDth').textContent=sig(E.dth)+'°';
-      $('eqDiW').textContent=sig(E.di)+'°, '+sig(E.dW)+'°';
-      $('eqDq').textContent=sig(E.dq1)+', '+sig(E.dq2);
-    }
+    const E=elemNow(), Q=trajNow();
+    $('eqPos').textContent=`${fm(H.x0,0)}, ${fm(H.y0,0)}, ${fm(H.z0,0)} m`;
+    $('eqVel').textContent=`${fm(H.xd0,3)}, ${fm(H.yd0,3)}, ${fm(H.zd0,3)} m/s`;
+    $('eqDa').textContent=fm(E.da,1)+' m';
+    $('eqDth').textContent=sig(E.dth)+'°';
+    $('eqDiW').textContent=sig(E.di)+'°, '+sig(E.dW)+'°';
+    $('eqDq').textContent=sig(E.dq1)+', '+sig(E.dq2);
+    $('eqAalpha').textContent=`${fm(Q.A0,1)} m, ${fm(Q.alpha,2)}°`;
+    $('eqBbeta').textContent=`${fm(Q.B0,1)} m, ${fm(Q.beta,2)}°`;
+    $('eqOffsets').textContent=`${fm(Q.xoff,1)} m, ${fm(Q.yoff,1)} m`;
+    $('trajSecRate').textContent=fm(-1.5*n()*Q.xoff,4)+' m/s';
+    $('trajWalkOrbit').textContent=fm(-3*Math.PI*Q.xoff,1)+' m/orbit along y';
     const v=$('verdict'); v.classList.remove('closed');
     const elemNote = state.mode==='elem' ? ' In element terms: <i>a</i><sub>2</sub> = Δ<i>a</i>/2, so bounded means Δ<i>a</i> = 0.' : '';
     let msg;
@@ -381,13 +452,42 @@
   const sig=(v,p=4)=>{ const x=Number(v.toPrecision(p)); return Math.abs(x)<1e-12?0:x; };
   function writeHill(){ for(const k of ['x0','y0','z0','xd0','yd0','zd0']){ $(k).value=sig(state.hill[k],6); $(k+'r').value=state.hill[k]; } }
   function writeElem(){ for(const k of ['da','dth','di','dW','dq1','dq2']) $(k).value=sig(state.elem[k]); }
+  function writeTraj(){
+    for(const k of ['A0','alpha','B0','beta','xoff','yoff']){
+      $(k).value=sig(state.traj[k],6);
+      const r=$(k+'r');
+      if(r) r.value=state.traj[k];
+    }
+  }
+  function clearCaseSelection(){ document.querySelectorAll('#cases button').forEach(b=>b.setAttribute('aria-pressed','false')); }
   function bindHill(key){
     const num=$(key), rng=$(key+'r');
-    num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)){ state.hill[key]=v; rng.value=v; recompute(); } });
-    rng.addEventListener('input', ()=>{ const v=parseFloat(rng.value); state.hill[key]=v; num.value=v; recompute(); });
+    num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)){ clearCaseSelection(); state.hill[key]=v; rng.value=v; recompute(); } });
+    rng.addEventListener('input', ()=>{ const v=parseFloat(rng.value); clearCaseSelection(); state.hill[key]=v; num.value=v; recompute(); });
   }
   ['x0','y0','z0','xd0','yd0','zd0'].forEach(bindHill);
-  ['da','dth','di','dW','dq1','dq2'].forEach(k=>$(k).addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ state.elem[k]=v; recompute(); } }));
+  ['da','dth','di','dW','dq1','dq2'].forEach(k=>$(k).addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ clearCaseSelection(); state.elem[k]=v; recompute(); } }));
+  function bindTraj(key){
+    const num=$(key), rng=$(key+'r');
+    num.addEventListener('input', ()=>{
+      let v=parseFloat(num.value);
+      if(!isNaN(v)){
+        clearCaseSelection();
+        if(key==='A0'||key==='B0'){ v=Math.max(0,v); num.value=v; }
+        state.traj[key]=v;
+        rng.value=v;
+        recompute();
+      }
+    });
+    rng.addEventListener('input', ()=>{
+      const v=parseFloat(rng.value);
+      clearCaseSelection();
+      state.traj[key]=v;
+      num.value=v;
+      recompute();
+    });
+  }
+  ['A0','alpha','B0','beta','xoff','yoff'].forEach(bindTraj);
   ['inc','th0'].forEach(k=>$(k).addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ state.tgt[k]=v; recompute(); } }));
   $('inc').value=state.tgt.inc; $('th0').value=state.tgt.th0;
 
@@ -398,9 +498,17 @@
   }
   function refreshSelectedCaseForNewOrbit(){
     const i=selectedCaseIndex();
-    if(i!==null) Object.assign(state.hill, getCases()[i]);
-    if(state.mode==='elem' && i!==null) state.elem=hillToElem(state.hill);
-    writeHill(); writeElem();
+    if(i!==null){
+      Object.assign(state.hill, getCases()[i]);
+      state.elem=hillToElem(state.hill);
+      state.traj=hillToTraj(state.hill);
+    } else {
+      const h=hillNow();
+      if(state.mode==='hill') state.hill={...h};
+      if(state.mode==='elem') state.elem=hillToElem(h);
+      if(state.mode==='traj') state.traj=hillToTraj(h);
+    }
+    writeHill(); writeElem(); writeTraj();
   }
 
   // orbit: n, period, a linked
@@ -419,33 +527,45 @@
   if(SHOW_CENTER_BUTTON){ $('centerBtn').addEventListener('click', ()=>{ state.elem.dth=-state.elem.dW*Math.cos(state.tgt.inc*d2r); writeElem(); recompute(); }); }
   else { $('centerBtn').remove(); $('centerHint').remove(); }
 
-  // mode switch: convert the authoritative representation into the other one, then swap
+  // mode switch: preserve the current physical motion, then make the chosen representation authoritative
   function setMode(mode){
     if(mode===state.mode) return;
-    if(mode==='elem') state.elem=hillToElem(state.hill); else state.hill=elemToHill(state.elem);
+    const h=hillNow();
+    if(mode==='hill') state.hill={...h};
+    else if(mode==='elem') state.elem=hillToElem(h);
+    else state.traj=hillToTraj(h);
     state.mode=mode;
-    $('modeHill').setAttribute('aria-pressed', mode==='hill'); $('modeElem').setAttribute('aria-pressed', mode==='elem');
-    $('hillFields').hidden = mode!=='hill'; $('elemFields').hidden = mode!=='elem';
-    $('hillEq').hidden = mode!=='elem'; $('elemEq').hidden = mode!=='hill';
-    $('eqHead').textContent = mode==='elem' ? 'Same motion as a Hill-frame state' : 'Same motion in element differences';
-    writeHill(); writeElem(); recompute();
+    $('modeHill').setAttribute('aria-pressed', mode==='hill');
+    $('modeElem').setAttribute('aria-pressed', mode==='elem');
+    $('modeTraj').setAttribute('aria-pressed', mode==='traj');
+    $('hillFields').hidden = mode!=='hill';
+    $('elemFields').hidden = mode!=='elem';
+    $('trajFields').hidden = mode!=='traj';
+    $('equivHill').hidden = mode==='hill';
+    $('equivElem').hidden = mode==='elem';
+    $('equivTraj').hidden = mode==='traj';
+    writeHill(); writeElem(); writeTraj(); recompute();
   }
   function loadCase(i){
     Object.assign(state.hill, getCases()[i]);
+    state.elem=hillToElem(state.hill);
+    state.traj=hillToTraj(state.hill);
     if(state.mode==='elem') state.elem=hillToElem(state.hill);
+    if(state.mode==='traj') state.traj=hillToTraj(state.hill);
     state.tau=0; $('time').value=0;
     document.querySelectorAll('#cases button').forEach((b,j)=>b.setAttribute('aria-pressed', j===i));
-    writeHill(); writeElem(); recompute();
+    writeHill(); writeElem(); writeTraj(); recompute();
   }
   $('modeHill').addEventListener('click', ()=>setMode('hill'));
   $('modeElem').addEventListener('click', ()=>setMode('elem'));
+  $('modeTraj').addEventListener('click', ()=>setMode('traj'));
   if(SHOW_CASES){ getCases().forEach((c,i)=>{ const b=document.createElement('button'); b.textContent='Case '+(i+1); b.addEventListener('click',()=>loadCase(i)); $('cases').appendChild(b); }); }
   else { $('casesHead').remove(); $('cases').remove(); }
 
   // ---------- init ----------
   new ResizeObserver(draw).observe(canvas.parentElement);
   writeOrbit();
-  if(SHOW_CASES) loadCase(0); else { writeHill(); writeElem(); recompute(); }
+  if(SHOW_CASES) loadCase(0); else { state.elem=hillToElem(state.hill); state.traj=hillToTraj(state.hill); writeHill(); writeElem(); writeTraj(); recompute(); }
   if(!reduce) setPlaying(true);
 })();
 </script>
