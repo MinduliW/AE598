@@ -15,14 +15,14 @@
   header{padding:16px 24px 10px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 24px;border-bottom:1px solid var(--rule)}
   header h1{font-size:22px;font-weight:600;margin:0;letter-spacing:-0.01em}
   header p{margin:0;color:var(--slate);font-size:14px}
-  main{flex:1;display:grid;grid-template-columns:330px 1fr;min-height:0}
-  @media (max-width:860px){ main{grid-template-columns:1fr;min-height:auto} section.plot{min-height:auto} .canvas-wrap{flex:none;height:62vh;min-height:340px} }
+  main{flex:1;display:grid;grid-template-columns:390px 1fr;min-height:0}
+  @media (max-width:860px){ main{grid-template-columns:1fr;min-height:auto} section.plot{min-height:auto} .plot-grid{display:block} .canvas-wrap,.time-wrap,.xz-wrap{height:46vh;min-height:300px} .right-stack{display:block;border-left:0;border-top:1px solid var(--rule)} .xz-wrap{border-top:1px solid var(--rule)} }
   aside{padding:14px 18px 24px;border-right:1px solid var(--rule);background:var(--tint);overflow:auto}
   @media (max-width:860px){ aside{border-right:0;border-top:1px solid var(--rule);order:2} }
   h2{font-size:13px;font-weight:600;margin:12px 0 6px;color:var(--slate)}
   h2:first-child{margin-top:0}
   .seg{display:flex;gap:0;margin-bottom:4px}
-  .seg button{flex:1;border-radius:0}
+  .seg button{flex:1;border-radius:0;padding:5px 6px;font-size:13px;white-space:nowrap}
   .seg button:first-child{border-radius:4px 0 0 4px}
   .seg button:last-child{border-radius:0 4px 4px 0;margin-left:-1px}
   .cases{display:flex;flex-wrap:wrap;gap:6px}
@@ -55,8 +55,16 @@
   .hint{font-size:13px;color:var(--slate);margin:4px 0 0}
   [hidden]{display:none !important}
   section.plot{display:flex;flex-direction:column;min-height:0}
-  .canvas-wrap{flex:1;position:relative;min-height:420px}
+  .plot-grid{flex:1;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(360px,.9fr);min-height:0}
+  .canvas-wrap,.time-wrap,.xz-wrap{position:relative;min-height:280px}
+  .right-stack{display:grid;grid-template-rows:minmax(320px,1fr) minmax(220px,.8fr);min-height:0;border-left:1px solid var(--rule);background:var(--white)}
+  .time-wrap{background:var(--white)}
+  .xz-wrap{border-top:1px solid var(--rule);background:var(--white)}
   canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  @media (max-width:1180px){
+    .plot-grid{grid-template-columns:1fr;grid-template-rows:minmax(420px,1fr) minmax(560px,1fr)}
+    .right-stack{border-left:0;border-top:1px solid var(--rule)}
+  }
   .playbar{display:flex;align-items:center;gap:12px;padding:10px 20px 14px;border-top:1px solid var(--rule);flex-wrap:wrap}
   .playbar input[type=range]{flex:1;min-width:160px;accent-color:var(--orange)}
   .playbar .t{font-variant-numeric:tabular-nums;min-width:190px;font-size:14px}
@@ -79,7 +87,7 @@
 <body>
 <header>
   <h1>Free-motion trajectories</h1>
-  <p>Clohessy–Wiltshire relative motion about a circular target. Describe the chaser by its Hill-frame state, relative orbital elements, or CW geometric constants, and see where it goes.</p>
+  <p>Clohessy–Wiltshire relative motion about a circular target. Describe the chaser by its Hill-frame state, relative orbital elements, CW geometric constants, or D’Amico relative orbital elements, and see where it goes.</p>
 </header>
 <main>
   <aside>
@@ -88,6 +96,7 @@
       <button id="modeHill" aria-pressed="true">Hill-frame state</button>
       <button id="modeElem" aria-pressed="false">ROEs</button>
       <button id="modeCW" aria-pressed="false">CW constants</button>
+      <button id="modeDamico" aria-pressed="false">D’Amico ROEs</button>
     </div>
 
     <h2 id="casesHead">Start from a case</h2>
@@ -98,7 +107,7 @@
       <label class="formation-choice"><input type="radio" name="formation" value="free" checked> Free design</label>
       <label class="formation-choice"><input type="radio" name="formation" value="inplane"> In-plane ellipse</label>
       <label class="formation-choice"><input type="radio" name="formation" value="alongtrack"> Along-track</label>
-      <label class="formation-choice"><input type="radio" name="formation" value="intrack"> In-track</label>
+      <label class="formation-choice"><input type="radio" name="formation" value="intrack"> Cross-track</label>
       <label class="formation-choice"><input type="radio" name="formation" value="circular"> Circular</label>
       <label class="formation-choice"><input type="radio" name="formation" value="projected"> Projected circular</label>
     </div>
@@ -165,6 +174,47 @@
       <div class="verdict" id="cwClass"></div>
     </div>
 
+    <div id="damicoFields" hidden>
+      <h2>D’Amico quasi-nonsingular ROEs</h2>
+      <p class="hint" style="margin:0 0 6px">All six ROEs are dimensionless; angular components are expressed in radians.</p>
+      <div class="field wide"><label for="dmda">δ<i>a</i></label><input type="range" id="dmdar" min="-0.0002" max="0.0002" step="0.000001"><input type="number" id="dmda" step="any"></div>
+      <div class="field wide"><label for="dmlambda">δλ (rad)</label><input type="range" id="dmlambdar" min="-0.0035" max="0.0035" step="0.00001"><input type="number" id="dmlambda" step="any"></div>
+
+      <h2>Vector representation</h2>
+      <div class="subseg" id="damicoVectorMode">
+        <button id="dmModeComponents" aria-pressed="true">Components</button>
+        <button id="dmModePolar" aria-pressed="false">Amplitude + phase</button>
+      </div>
+
+      <div id="damicoComponentFields">
+        <div class="field wide"><label for="dmex">δ<i>e</i><sub>x</sub></label><input type="range" id="dmexr" min="-0.0002" max="0.0002" step="0.000001"><input type="number" id="dmex" step="any"></div>
+        <div class="field wide"><label for="dmey">δ<i>e</i><sub>y</sub></label><input type="range" id="dmeyr" min="-0.0002" max="0.0002" step="0.000001"><input type="number" id="dmey" step="any"></div>
+        <div class="field wide"><label for="dmix">δ<i>i</i><sub>x</sub> (rad)</label><input type="range" id="dmixr" min="-0.0035" max="0.0035" step="0.00001"><input type="number" id="dmix" step="any"></div>
+        <div class="field wide"><label for="dmiy">δ<i>i</i><sub>y</sub> (rad)</label><input type="range" id="dmiyr" min="-0.0035" max="0.0035" step="0.00001"><input type="number" id="dmiy" step="any"></div>
+      </div>
+
+      <div id="damicoPolarFields" hidden>
+        <div class="field wide"><label for="dmemag">δ<i>e</i></label><input type="range" id="dmemagr" min="0" max="0.0004" step="0.000001"><input type="number" id="dmemag" min="0" step="any"></div>
+        <div class="field wide"><label for="dmephase">φ (deg)</label><input type="range" id="dmephaser" min="-180" max="180" step="1"><input type="number" id="dmephase" step="any"></div>
+        <div class="field wide"><label for="dmimag">δ<i>i</i> (rad)</label><input type="range" id="dmimagr" min="0" max="0.005" step="0.00001"><input type="number" id="dmimag" min="0" step="any"></div>
+        <div class="field wide"><label for="dmiphase">ϑ (deg)</label><input type="range" id="dmiphaser" min="-180" max="180" step="1"><input type="number" id="dmiphase" step="any"></div>
+        <p class="hint">δ<i>e</i><sub>x</sub>=δ<i>e</i> cos φ, δ<i>e</i><sub>y</sub>=δ<i>e</i> sin φ; δ<i>i</i><sub>x</sub>=δ<i>i</i> cos ϑ, δ<i>i</i><sub>y</sub>=δ<i>i</i> sin ϑ.</p>
+      </div>
+
+      <p class="hint">δ<i>a</i>=Δ<i>a</i>/<i>a</i>, δλ=Δ<i>u</i>+ΔΩ cos <i>i</i>, δ<i>e</i>=(δ<i>e</i><sub>x</sub>,δ<i>e</i><sub>y</sub>), δ<i>i</i>=(δ<i>i</i><sub>x</sub>,δ<i>i</i><sub>y</sub>) with δ<i>i</i><sub>y</sub>=ΔΩ sin <i>i</i>.</p>
+
+      <h2>Vector polar form</h2>
+      <dl class="readout">
+        <dt>|δ<i>e</i>|</dt><dd id="dmDeMag"></dd>
+        <dt>φ</dt><dd id="dmDePhase"></dd>
+        <dt>|δ<i>i</i>|</dt><dd id="dmDiMag"></dd>
+        <dt>ϑ</dt><dd id="dmDiPhase"></dd>
+        <dt><i>a</i>δ<i>a</i></dt><dd id="dmDaMetres"></dd>
+        <dt><i>a</i>δλ</dt><dd id="dmLambdaMetres"></dd>
+      </dl>
+      <div class="verdict" id="damicoClass"></div>
+    </div>
+
     <h2>Target orbit</h2>
     <div class="g">
       <div><label for="nin" class="u">Mean motion <i>n</i>, rad/s</label><input type="number" id="nin" step="any"></div>
@@ -200,7 +250,13 @@
   </aside>
 
   <section class="plot">
-    <div class="canvas-wrap"><canvas id="c"></canvas></div>
+    <div class="plot-grid">
+      <div class="canvas-wrap"><canvas id="c"></canvas></div>
+      <div class="right-stack">
+        <div class="time-wrap"><canvas id="ct" aria-label="x, y, and z versus time"></canvas></div>
+        <div class="xz-wrap"><canvas id="cxz" aria-label="x versus z"></canvas></div>
+      </div>
+    </div>
     <div class="playbar">
       <button class="primary" id="play" aria-pressed="false">Play</button>
       <input type="range" id="time" min="0" max="1" step="0.001" value="0" aria-label="Time">
@@ -221,6 +277,8 @@
   const d2r = Math.PI/180, r2d = 180/Math.PI;
   const $ = id => document.getElementById(id);
   const canvas = $('c'), ctx = canvas.getContext('2d');
+  const timeCanvas = $('ct'), tctx = timeCanvas.getContext('2d');
+  const xzCanvas = $('cxz'), xzctx = xzCanvas.getContext('2d');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ---------- state ----------
@@ -232,6 +290,9 @@
     hill:{ x0:0, y0:100, z0:0, xd0:0, yd0:0, zd0:0 },
     elem:{ da:0, dth:0, di:0, dW:0, dq1:0, dq2:0 },              // angles in degrees
     cwconst:{ A0:0, alpha:0, B0:0, beta0:0, yoff:100, xoff:0 },    // amplitudes/offsets in m, phases in deg
+    damico:{ da:0, dlambda:0, dex:0, dey:0, dix:0, diy:0 }, // dimensionless; angles in rad
+    damicoVectorMode:'components',
+    damicoPolarPhase:{e:0,i:0}, // degrees; retained even when a vector magnitude is zero
   };
   // Cases match the MATLAB exercise.  Velocities that are intended to satisfy
   // an exact CW relation are computed from the current mean motion n.
@@ -290,9 +351,49 @@
     const yoff=h.y0-2*As;
     return {A0,alpha,B0,beta0,yoff,xoff};
   }
-  const hillNow = () => state.mode==='hill' ? state.hill : (state.mode==='elem' ? elemToHill(state.elem) : cwConstToHill(state.cwconst));
-  const elemNow = () => state.mode==='elem' ? state.elem : hillToElem(hillNow());
+
+  // D'Amico quasi-nonsingular ROEs:
+  // [δa, δλ, δex, δey, δix, δiy]^T, with all entries dimensionless
+  // and angular quantities interpreted in radians.
+  function damicoToHill(d){
+    const a=sma(), N=n(), th=state.tgt.th0*d2r, c=Math.cos(th), s=Math.sin(th);
+    return {
+      x0:  a*(d.da - d.dex*c - d.dey*s),
+      y0:  a*(d.dlambda + 2*d.dex*s - 2*d.dey*c),
+      z0:  a*(d.dix*s - d.diy*c),
+      xd0: a*N*(d.dex*s - d.dey*c),
+      yd0: a*N*(-1.5*d.da + 2*d.dex*c + 2*d.dey*s),
+      zd0: a*N*(d.dix*c + d.diy*s)
+    };
+  }
+  function hillToDamico(h){
+    const a=sma(), N=n(), th=state.tgt.th0*d2r, c=Math.cos(th), s=Math.sin(th);
+    const da=(4*h.x0+2*h.yd0/N)/a;
+    const A=(3*h.x0+2*h.yd0/N)/a, B=h.xd0/(a*N);
+    const dex=A*c+B*s, dey=A*s-B*c;
+    const dlambda=(h.y0-2*h.xd0/N)/a;
+    const C=h.z0/a, D=h.zd0/(a*N);
+    const dix=C*s+D*c, diy=D*s-C*c;
+    return {da,dlambda,dex,dey,dix,diy};
+  }
+  function damicoToElem(d){
+    const a=sma(), inc=state.tgt.inc*d2r, si=Math.sin(inc), ci=Math.cos(inc);
+    const dWrad=Math.abs(si)>1e-9 ? d.diy/si : 0;
+    const dthrad=d.dlambda-ci*dWrad;
+    return {da:a*d.da,dth:dthrad*r2d,di:d.dix*r2d,dW:dWrad*r2d,dq1:d.dex,dq2:d.dey};
+  }
+  function elemToDamico(e){
+    const inc=state.tgt.inc*d2r, dW=e.dW*d2r;
+    return {da:e.da/sma(),dlambda:e.dth*d2r+Math.cos(inc)*dW,dex:e.dq1,dey:e.dq2,dix:e.di*d2r,diy:dW*Math.sin(inc)};
+  }
+
+  const hillNow = () => state.mode==='hill' ? state.hill
+    : state.mode==='elem' ? elemToHill(state.elem)
+    : state.mode==='cw' ? cwConstToHill(state.cwconst)
+    : damicoToHill(state.damico);
+  const elemNow = () => state.mode==='elem' ? state.elem : (state.mode==='damico' ? damicoToElem(state.damico) : hillToElem(hillNow()));
   const cwNow = () => state.mode==='cw' ? state.cwconst : hillToCWConst(hillNow());
+  const damicoNow = () => state.mode==='damico' ? state.damico : hillToDamico(hillNow());
 
   // CW constants implied by the circular-target ROEs.
   // Convention used on the lecture slides:
@@ -371,6 +472,25 @@
       return;
     }
 
+    if(mode==='damico'){
+      const d=state.damico;
+      if(f==='inplane'){
+        d.da=0; d.dlambda=0; d.dix=0; d.diy=0;
+      } else if(f==='alongtrack'){
+        const dl=d.dlambda;
+        Object.assign(d,{da:0,dlambda:dl,dex:0,dey:0,dix:0,diy:0});
+      } else if(f==='intrack'){
+        d.da=0; d.dex=0; d.dey=0;
+      } else if(f==='circular' || f==='projected'){
+        const de=Math.hypot(d.dex,d.dey), phiE=Math.atan2(d.dey,d.dex);
+        const k=(f==='circular')?Math.sqrt(3):2;
+        const phiI=phiE-sense*Math.PI/2, diMag=k*de;
+        d.da=0; d.dlambda=0;
+        d.dix=diMag*Math.cos(phiI); d.diy=diMag*Math.sin(phiI);
+      }
+      return;
+    }
+
     if(mode==='elem'){
       const e=state.elem, inc=state.tgt.inc*d2r, si=Math.sin(inc), ci=Math.cos(inc);
       if(f==='inplane'){
@@ -416,6 +536,13 @@
       intrack:['A0c','alphac','xoffc'],
       circular:['B0c','betac','yoffc','xoffc'],
       projected:['B0c','betac','yoffc','xoffc']
+    },
+    damico:{
+      inplane:['dmda','dmlambda','dmix','dmiy','dmimag','dmiphase'],
+      alongtrack:['dmda','dmex','dmey','dmix','dmiy','dmemag','dmephase','dmimag','dmiphase'],
+      intrack:['dmda','dmex','dmey','dmemag','dmephase'],
+      circular:['dmda','dmlambda','dmix','dmiy','dmimag','dmiphase'],
+      projected:['dmda','dmlambda','dmix','dmiy','dmimag','dmiphase']
     }
   };
 
@@ -429,24 +556,25 @@
     }
   }
   function updateFormationLocks(){
-    const all={hill:['x0','y0','z0','xd0','yd0','zd0'], elem:['da','dth','di','dW','dq1','dq2'], cw:['A0c','alphac','B0c','betac','yoffc','xoffc']};
+    const all={hill:['x0','y0','z0','xd0','yd0','zd0'], elem:['da','dth','di','dW','dq1','dq2'], cw:['A0c','alphac','B0c','betac','yoffc','xoffc'], damico:['dmda','dmlambda','dmex','dmey','dmix','dmiy','dmemag','dmephase','dmimag','dmiphase']};
     for(const ids of Object.values(all)) setLocked(ids,false);
     const f=state.formation;
     if(f!=='free') setLocked(formationLocked[state.mode][f]||[],true);
     $('formationSenseRow').hidden=!(f==='circular'||f==='projected');
 
-    const names={inplane:'In-plane ellipse',alongtrack:'Along-track',intrack:'In-track',circular:'Circular',projected:'Projected circular'};
+    const names={inplane:'In-plane ellipse',alongtrack:'Along-track',intrack:'Cross-track',circular:'Circular',projected:'Projected circular'};
     let txt='<span class="free">Free design:</span> all parameters are adjustable.';
     if(f!=='free'){
       const freeByMode={
         hill:{inplane:'x₀ and ẋ₀',alongtrack:'y₀',intrack:'y₀, z₀ and ż₀',circular:'x₀ and ẋ₀',projected:'x₀ and ẋ₀'},
         elem:{inplane:'Δq₁ and Δq₂',alongtrack:'Δθ₀',intrack:'Δθ₀, Δi and ΔΩ',circular:'Δq₁ and Δq₂',projected:'Δq₁ and Δq₂'},
-        cw:{inplane:'A₀ and α',alongtrack:'yoff',intrack:'yoff, B₀ and β₀',circular:'A₀ and α',projected:'A₀ and α'}
+        cw:{inplane:'A₀ and α',alongtrack:'yoff',intrack:'yoff, B₀ and β₀',circular:'A₀ and α',projected:'A₀ and α'},
+        damico:{inplane:state.damicoVectorMode==='polar'?'δe and φ':'δeₓ and δeᵧ',alongtrack:'δλ',intrack:state.damicoVectorMode==='polar'?'δλ, δi and ϑ':'δλ, δiₓ and δiᵧ',circular:state.damicoVectorMode==='polar'?'δe and φ':'δeₓ and δeᵧ',projected:state.damicoVectorMode==='polar'?'δe and φ':'δeₓ and δeᵧ'}
       };
       const geometry={
         inplane:'B₀=0, xoff=yoff=0.',
         alongtrack:'A₀=B₀=xoff=0; y is constant.',
-        intrack:'A₀=xoff=0; y is constant while the cross-track motion z(t)=B₀ sin(nt+β₀) has independently adjustable amplitude and phase.',
+        intrack:'A₀=xoff=0; this is a cross-track oscillation z(t)=B₀ sin(nt+β₀) about a fixed along-track offset yoff, with independently adjustable amplitude and phase.',
         circular:'x²+y²+z²=R² with B₀=√3 A₀ and β=α±90°; R=2A₀.',
         projected:'y²+z²=R² with B₀=2A₀ and β=α±90°; R=2A₀.'
       };
@@ -457,7 +585,7 @@
 
   function applyFormationAndRefresh(){
     enforceFormation(state.mode);
-    writeHill(); writeElem(); writeCW();
+    writeHill(); writeElem(); writeCW(); writeDamico();
     updateFormationLocks();
     recompute();
   }
@@ -525,6 +653,26 @@
       }
     }
 
+    if($('dmDeMag')){
+      const Dm=damicoNow(), deMag=Math.hypot(Dm.dex,Dm.dey), diMag=Math.hypot(Dm.dix,Dm.diy);
+      const phaseDeg=(y,x)=>Math.atan2(y,x)*r2d;
+      const dsig=(v,p=5)=>{ const x=Number(v.toPrecision(p)); return Math.abs(x)<1e-12?'0':String(x); };
+      $('dmDeMag').textContent=dsig(deMag,5);
+      $('dmDePhase').textContent=(deMag<1e-12?'—':dsig(phaseDeg(Dm.dey,Dm.dex),5)+'°');
+      $('dmDiMag').textContent=dsig(diMag,5);
+      $('dmDiPhase').textContent=(diMag<1e-12?'—':dsig(phaseDeg(Dm.diy,Dm.dix),5)+'°');
+      $('dmDaMetres').textContent=fm(sma()*Dm.da,1)+' m';
+      $('dmLambdaMetres').textContent=fm(sma()*Dm.dlambda,1)+' m';
+      const dc=$('damicoClass'), xtol=0.5/sma(), ltol=0.5/sma();
+      if(Math.abs(Dm.da)<xtol && Math.abs(Dm.dlambda)<ltol){
+        dc.innerHTML='<strong>Centered + bounded.</strong> δ<i>a</i>=0 and δλ=0.'; dc.classList.add('closed');
+      } else if(Math.abs(Dm.da)<xtol){
+        dc.innerHTML='<strong>Bounded / no drift, not centered.</strong> δ<i>a</i>=0 but δλ≠0.'; dc.classList.add('closed');
+      } else {
+        dc.innerHTML='<strong>Drifting / unbounded.</strong> δ<i>a</i>≠0 produces secular along-track drift.'; dc.classList.remove('closed');
+      }
+    }
+
     if($('cwClass')){
       const C=cwNow(), cc=$('cwClass'), xtol=0.5, ytol=0.5;
       if(Math.abs(C.xoff)<xtol && Math.abs(C.yoff)<ytol){
@@ -537,7 +685,7 @@
     }
 
     const sig=(v,p=4)=>{ const x=Number(v.toPrecision(p)); return Math.abs(x)<1e-12?'0':String(x); };
-    if(state.mode==='elem'){
+    if(state.mode==='elem' || state.mode==='damico'){
       $('eqPos').textContent=`${fm(H.x0,0)}, ${fm(H.y0,0)}, ${fm(H.z0,0)} m`;
       $('eqVel').textContent=`${fm(H.xd0,3)}, ${fm(H.yd0,3)}, ${fm(H.zd0,3)} m/s`;
     } else {
@@ -588,6 +736,220 @@
   // ---------- drawing ----------
   const font=(px)=>px+'px '+getComputedStyle(document.body).fontFamily;
   function niceStep(range){ const raw=range/6, p=Math.pow(10,Math.floor(Math.log10(raw))), m=raw/p; return p*(m<1.5?1:m<3.5?2:m<7.5?5:10); }
+
+  function drawTimeHistories(){
+    const dpr=window.devicePixelRatio||1, W=timeCanvas.clientWidth, Hh=timeCanvas.clientHeight;
+    if(timeCanvas.width!==W*dpr||timeCanvas.height!==Hh*dpr){ timeCanvas.width=W*dpr; timeCanvas.height=Hh*dpr; }
+    tctx.setTransform(dpr,0,0,dpr,0,0); tctx.clearRect(0,0,W,Hh);
+    if(!path.length || W<=0 || Hh<=0) return;
+
+    const T=state.orbits*state.period*60, tNow=state.tau*T;
+    const now=cw(H,tNow);
+    const m={l:62,r:18,t:34,b:44,gap:28};
+    const availH=Hh-m.t-m.b-2*m.gap;
+    const ph=Math.max(70,availH/3);
+    const plotW=Math.max(40,W-m.l-m.r);
+    const tx=t=>m.l+(T>0?t/T:0)*plotW;
+
+    const comps=[
+      {k:0,label:'x(t)  radial (m)'},
+      {k:1,label:'y(t)  along-track (m)'},
+      {k:2,label:'z(t)  cross-track (m)'}
+    ];
+
+    // Common time grid in orbital periods.
+    const orbitMax=Math.max(state.orbits,0.25);
+    const orbitStep=niceStep(orbitMax);
+    const tTicks=[];
+    for(let q=0; q<=orbitMax+1e-12; q+=orbitStep) tTicks.push(q);
+    if(tTicks.length===0 || Math.abs(tTicks[tTicks.length-1]-orbitMax)>1e-9) tTicks.push(orbitMax);
+
+    tctx.fillStyle='#13294B';
+    tctx.font=font(13);
+    tctx.textAlign='left';
+    tctx.textBaseline='bottom';
+    tctx.fillText('Position histories',m.l,22);
+
+    comps.forEach((p,j)=>{
+      const y0=m.t+j*(ph+m.gap);
+      let lo=Infinity, hi=-Infinity;
+      for(const q of path){ lo=Math.min(lo,q[p.k]); hi=Math.max(hi,q[p.k]); }
+      lo=Math.min(lo,0); hi=Math.max(hi,0);
+
+      let span=hi-lo;
+      if(span<1e-9){
+        const c0=(hi+lo)/2;
+        const half=Math.max(10,Math.abs(c0)*0.15,1);
+        lo=c0-half; hi=c0+half; span=hi-lo;
+      } else {
+        const pad=Math.max(0.10*span,1);
+        lo-=pad; hi+=pad; span=hi-lo;
+      }
+
+      const Y=v=>y0+ph-(v-lo)/span*ph;
+      const gy=niceStep(span);
+
+      // Panel background and clipping.
+      tctx.save();
+      tctx.beginPath();
+      tctx.rect(m.l,y0,plotW,ph);
+      tctx.clip();
+
+      // Grid.
+      tctx.strokeStyle='#DCE3EC';
+      tctx.lineWidth=1;
+      for(const qo of tTicks){
+        const px=tx((qo/orbitMax)*T);
+        tctx.beginPath(); tctx.moveTo(px,y0); tctx.lineTo(px,y0+ph); tctx.stroke();
+      }
+      for(let v=Math.ceil(lo/gy)*gy; v<=hi+1e-12; v+=gy){
+        tctx.beginPath(); tctx.moveTo(m.l,Y(v)); tctx.lineTo(m.l+plotW,Y(v)); tctx.stroke();
+      }
+
+      // Zero line.
+      if(lo<0 && hi>0){
+        tctx.strokeStyle='#C9D2DE'; tctx.lineWidth=1.2;
+        tctx.beginPath(); tctx.moveTo(m.l,Y(0)); tctx.lineTo(m.l+plotW,Y(0)); tctx.stroke();
+      }
+
+      // Full history, then traversed portion.
+      tctx.strokeStyle='rgba(19,41,75,0.22)'; tctx.lineWidth=1.5;
+      tctx.beginPath();
+      path.forEach((q,i)=>i?tctx.lineTo(tx(q[3]),Y(q[p.k])):tctx.moveTo(tx(q[3]),Y(q[p.k])));
+      tctx.stroke();
+
+      tctx.strokeStyle='#13294B'; tctx.lineWidth=2.0;
+      tctx.beginPath(); let started=false;
+      for(const q of path){
+        if(q[3]>tNow) break;
+        if(started) tctx.lineTo(tx(q[3]),Y(q[p.k])); else {tctx.moveTo(tx(q[3]),Y(q[p.k])); started=true;}
+      }
+      if(started) tctx.stroke();
+
+      // Current-time cursor and point.
+      const pxNow=tx(tNow), pyNow=Y(now[p.k]);
+      tctx.strokeStyle='#E84A27'; tctx.lineWidth=1.2;
+      tctx.beginPath(); tctx.moveTo(pxNow,y0); tctx.lineTo(pxNow,y0+ph); tctx.stroke();
+      tctx.fillStyle='#FFFFFF'; tctx.beginPath(); tctx.arc(pxNow,pyNow,5,0,2*Math.PI); tctx.fill();
+      tctx.fillStyle='#E84A27'; tctx.beginPath(); tctx.arc(pxNow,pyNow,3.5,0,2*Math.PI); tctx.fill();
+
+      tctx.restore();
+
+      // Panel border, y labels, and title.
+      tctx.strokeStyle='#C9D2DE'; tctx.lineWidth=1;
+      tctx.strokeRect(m.l,y0,plotW,ph);
+      tctx.fillStyle='#5B6B80'; tctx.font=font(11); tctx.textAlign='right'; tctx.textBaseline='middle';
+      for(let v=Math.ceil(lo/gy)*gy; v<=hi+1e-12; v+=gy) tctx.fillText(fm(v,0),m.l-7,Y(v));
+      tctx.fillStyle='#13294B'; tctx.font=font(12); tctx.textAlign='left'; tctx.textBaseline='bottom';
+      tctx.fillText(p.label,m.l,y0-5);
+
+      // Only the bottom panel gets time tick labels.
+      if(j===comps.length-1){
+        tctx.fillStyle='#5B6B80'; tctx.font=font(11); tctx.textAlign='center'; tctx.textBaseline='top';
+        for(const qo of tTicks){
+          const px=tx((qo/orbitMax)*T);
+          tctx.fillText(fm(qo,2),px,y0+ph+6);
+        }
+      }
+    });
+
+    tctx.fillStyle='#13294B'; tctx.font=font(12); tctx.textAlign='right'; tctx.textBaseline='bottom';
+    tctx.fillText('time (orbits)  →',W-m.r,Hh-6);
+  }
+  function drawXZ(){
+    const dpr=window.devicePixelRatio||1, W=xzCanvas.clientWidth, Hh=xzCanvas.clientHeight;
+    if(xzCanvas.width!==W*dpr||xzCanvas.height!==Hh*dpr){ xzCanvas.width=W*dpr; xzCanvas.height=Hh*dpr; }
+    xzctx.setTransform(dpr,0,0,dpr,0,0); xzctx.clearRect(0,0,W,Hh);
+    if(!path.length || W<=0 || Hh<=0) return;
+
+    const T=state.orbits*state.period*60, tNow=state.tau*T;
+    const now=cw(H,tNow);
+    const m={l:56,r:20,t:32,b:42};
+    const plotW=Math.max(40,W-m.l-m.r), plotH=Math.max(60,Hh-m.t-m.b);
+
+    let xmin=Infinity, xmax=-Infinity, zmin=Infinity, zmax=-Infinity;
+    for(const q of path){
+      xmin=Math.min(xmin,q[0]); xmax=Math.max(xmax,q[0]);
+      zmin=Math.min(zmin,q[2]); zmax=Math.max(zmax,q[2]);
+    }
+    xmin=Math.min(xmin,0); xmax=Math.max(xmax,0);
+    zmin=Math.min(zmin,0); zmax=Math.max(zmax,0);
+
+    let xr=xmax-xmin, zr=zmax-zmin;
+    if(xr<1e-9){ const c0=(xmax+xmin)/2; const half=Math.max(10,Math.abs(c0)*0.15,1); xmin=c0-half; xmax=c0+half; xr=xmax-xmin; }
+    else { const pad=Math.max(0.12*xr,1); xmin-=pad; xmax+=pad; xr=xmax-xmin; }
+    if(zr<1e-9){ const c0=(zmax+zmin)/2; const half=Math.max(10,Math.abs(c0)*0.15,1); zmin=c0-half; zmax=c0+half; zr=zmax-zmin; }
+    else { const pad=Math.max(0.12*zr,1); zmin-=pad; zmax+=pad; zr=zmax-zmin; }
+
+    const X=v=>m.l+(v-xmin)/xr*plotW;
+    const Y=v=>m.t+plotH-(v-zmin)/zr*plotH;
+    const gx=niceStep(xr), gz=niceStep(zr);
+
+    xzctx.save();
+    xzctx.beginPath(); xzctx.rect(m.l,m.t,plotW,plotH); xzctx.clip();
+
+    xzctx.strokeStyle='#DCE3EC'; xzctx.lineWidth=1;
+    for(let v=Math.ceil(xmin/gx)*gx; v<=xmax+1e-12; v+=gx){
+      xzctx.beginPath(); xzctx.moveTo(X(v),m.t); xzctx.lineTo(X(v),m.t+plotH); xzctx.stroke();
+    }
+    for(let v=Math.ceil(zmin/gz)*gz; v<=zmax+1e-12; v+=gz){
+      xzctx.beginPath(); xzctx.moveTo(m.l,Y(v)); xzctx.lineTo(m.l+plotW,Y(v)); xzctx.stroke();
+    }
+
+    xzctx.strokeStyle='#C9D2DE'; xzctx.lineWidth=1.2;
+    if(xmin<0 && xmax>0){ xzctx.beginPath(); xzctx.moveTo(X(0),m.t); xzctx.lineTo(X(0),m.t+plotH); xzctx.stroke(); }
+    if(zmin<0 && zmax>0){ xzctx.beginPath(); xzctx.moveTo(m.l,Y(0)); xzctx.lineTo(m.l+plotW,Y(0)); xzctx.stroke(); }
+
+    xzctx.strokeStyle='rgba(19,41,75,0.22)'; xzctx.lineWidth=1.5;
+    xzctx.beginPath();
+    path.forEach((q,i)=>i?xzctx.lineTo(X(q[0]),Y(q[2])):xzctx.moveTo(X(q[0]),Y(q[2])));
+    xzctx.stroke();
+
+    xzctx.strokeStyle='#13294B'; xzctx.lineWidth=2.0;
+    xzctx.beginPath(); let started=false;
+    for(const q of path){
+      if(q[3]>tNow) break;
+      if(started) xzctx.lineTo(X(q[0]),Y(q[2])); else { xzctx.moveTo(X(q[0]),Y(q[2])); started=true; }
+    }
+    if(started) xzctx.stroke();
+
+    xzctx.strokeStyle='#13294B'; xzctx.lineWidth=1.5;
+    xzctx.beginPath();
+    xzctx.moveTo(X(0)-7,Y(0)); xzctx.lineTo(X(0)+7,Y(0));
+    xzctx.moveTo(X(0),Y(0)-7); xzctx.lineTo(X(0),Y(0)+7);
+    xzctx.stroke();
+    xzctx.beginPath(); xzctx.arc(X(0),Y(0),4,0,2*Math.PI); xzctx.stroke();
+
+    xzctx.fillStyle='#FFFFFF'; xzctx.strokeStyle='#13294B'; xzctx.lineWidth=1.5;
+    xzctx.beginPath(); xzctx.arc(X(H.x0),Y(H.z0),4.5,0,2*Math.PI); xzctx.fill(); xzctx.stroke();
+
+    xzctx.fillStyle='#FFFFFF'; xzctx.beginPath(); xzctx.arc(X(now[0]),Y(now[2]),8,0,2*Math.PI); xzctx.fill();
+    xzctx.fillStyle='#E84A27'; xzctx.beginPath(); xzctx.arc(X(now[0]),Y(now[2]),6,0,2*Math.PI); xzctx.fill();
+
+    xzctx.restore();
+
+    xzctx.strokeStyle='#C9D2DE'; xzctx.lineWidth=1; xzctx.strokeRect(m.l,m.t,plotW,plotH);
+
+    xzctx.fillStyle='#13294B'; xzctx.font=font(13); xzctx.textAlign='left'; xzctx.textBaseline='bottom';
+    xzctx.fillText('x vs z view',m.l,22);
+
+    xzctx.fillStyle='#5B6B80'; xzctx.font=font(11); xzctx.textAlign='center'; xzctx.textBaseline='top';
+    for(let v=Math.ceil(xmin/gx)*gx; v<=xmax+1e-12; v+=gx) xzctx.fillText(fm(v,0),X(v),m.t+plotH+6);
+
+    xzctx.fillStyle='#5B6B80'; xzctx.font=font(11); xzctx.textAlign='right'; xzctx.textBaseline='middle';
+    for(let v=Math.ceil(zmin/gz)*gz; v<=zmax+1e-12; v+=gz) xzctx.fillText(fm(v,0),m.l-7,Y(v));
+
+    xzctx.fillStyle='#13294B'; xzctx.font=font(12); xzctx.textAlign='right'; xzctx.textBaseline='bottom';
+    xzctx.fillText('radial  x (m)  →',W-m.r,Hh-6);
+
+    xzctx.save();
+    xzctx.translate(14,Hh/2);
+    xzctx.rotate(-Math.PI/2);
+    xzctx.textAlign='center'; xzctx.textBaseline='top';
+    xzctx.fillText('cross-track  z (m)  →',0,0);
+    xzctx.restore();
+  }
+
   function draw(){
     const dpr=window.devicePixelRatio||1, W=canvas.clientWidth, Hh=canvas.clientHeight;
     if(canvas.width!==W*dpr||canvas.height!==Hh*dpr){ canvas.width=W*dpr; canvas.height=Hh*dpr; }
@@ -654,6 +1016,8 @@
     ctx.fillStyle='#5B6B80'; ctx.font=font(12); ctx.textAlign='center'; ctx.textBaseline='top';
     for(let v=Math.ceil(visYmin/g)*g; v<=visYmax; v+=g){ ctx.fillText(fm(v,0), X(v), base+6); }
     ctx.fillStyle='#13294B'; ctx.font=font(13); ctx.textAlign='right'; ctx.textBaseline='bottom'; ctx.fillText('along-track  y (m)  →', W-m.r, Hh-6);
+    drawTimeHistories();
+    drawXZ();
   }
 
   // ---------- animation ----------
@@ -673,6 +1037,40 @@
     const map={A0:'A0c',alpha:'alphac',B0:'B0c',beta0:'betac',yoff:'yoffc',xoff:'xoffc'};
     for(const [k,id] of Object.entries(map)){ $(id).value=sig(state.cwconst[k],6); $(id+'r').value=state.cwconst[k]; }
   }
+  function damicoPolar(){
+    const d=state.damico;
+    const emag=Math.hypot(d.dex,d.dey), imag=Math.hypot(d.dix,d.diy);
+    if(emag>1e-14) state.damicoPolarPhase.e=Math.atan2(d.dey,d.dex)*r2d;
+    if(imag>1e-14) state.damicoPolarPhase.i=Math.atan2(d.diy,d.dix)*r2d;
+    return {emag,ephase:state.damicoPolarPhase.e,imag,iphase:state.damicoPolarPhase.i};
+  }
+  function writeDamico(){
+    const map={da:'dmda',dlambda:'dmlambda',dex:'dmex',dey:'dmey',dix:'dmix',diy:'dmiy'};
+    for(const [k,id] of Object.entries(map)){ $(id).value=sig(state.damico[k],7); $(id+'r').value=state.damico[k]; }
+    const q=damicoPolar();
+    const polar={dmemag:q.emag,dmephase:q.ephase,dmimag:q.imag,dmiphase:q.iphase};
+    for(const [id,v] of Object.entries(polar)){ $(id).value=sig(v,7); $(id+'r').value=v; }
+  }
+  function setDamicoVectorMode(mode){
+    state.damicoVectorMode=mode==='polar'?'polar':'components';
+    $('dmModeComponents').setAttribute('aria-pressed',state.damicoVectorMode==='components');
+    $('dmModePolar').setAttribute('aria-pressed',state.damicoVectorMode==='polar');
+    $('damicoComponentFields').hidden=state.damicoVectorMode!=='components';
+    $('damicoPolarFields').hidden=state.damicoVectorMode!=='polar';
+    updateFormationLocks();
+  }
+  function updateDamicoFromPolar(changed,value){
+    const q=damicoPolar();
+    let emag=q.emag, ephase=q.ephase, imag=q.imag, iphase=q.iphase;
+    if(changed==='emag') emag=Math.max(0,value);
+    if(changed==='ephase'){ ephase=value; state.damicoPolarPhase.e=value; }
+    if(changed==='imag') imag=Math.max(0,value);
+    if(changed==='iphase'){ iphase=value; state.damicoPolarPhase.i=value; }
+    state.damico.dex=emag*Math.cos(ephase*d2r);
+    state.damico.dey=emag*Math.sin(ephase*d2r);
+    state.damico.dix=imag*Math.cos(iphase*d2r);
+    state.damico.diy=imag*Math.sin(iphase*d2r);
+  }
   function bindHill(key){
     const num=$(key), rng=$(key+'r');
     num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)){ state.hill[key]=v; rng.value=v; if(state.formation!=='free') enforceFormation('hill'); writeHill(); recompute(); } });
@@ -688,10 +1086,30 @@
     num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)){ state.cwconst[key]=v; rng.value=v; if(state.formation!=='free') enforceFormation('cw'); writeCW(); recompute(); } });
     rng.addEventListener('input', ()=>{ const v=parseFloat(rng.value); state.cwconst[key]=v; num.value=v; if(state.formation!=='free') enforceFormation('cw'); writeCW(); recompute(); });
   }
+  function bindDamico(key,id){
+    const num=$(id), rng=$(id+'r');
+    num.addEventListener('input', ()=>{ const v=parseFloat(num.value); if(!isNaN(v)){ state.damico[key]=v; rng.value=v; if(state.formation!=='free') enforceFormation('damico'); writeDamico(); recompute(); } });
+    rng.addEventListener('input', ()=>{ const v=parseFloat(rng.value); state.damico[key]=v; num.value=v; if(state.formation!=='free') enforceFormation('damico'); writeDamico(); recompute(); });
+  }
+  function bindDamicoPolar(key,id){
+    const num=$(id), rng=$(id+'r');
+    const apply=v=>{
+      if(isNaN(v)) return;
+      updateDamicoFromPolar(key,v);
+      if(state.formation!=='free') enforceFormation('damico');
+      writeDamico(); recompute();
+    };
+    num.addEventListener('input',()=>{ const v=parseFloat(num.value); if(!isNaN(v)){ rng.value=v; apply(v); } });
+    rng.addEventListener('input',()=>{ const v=parseFloat(rng.value); num.value=v; apply(v); });
+  }
   ['x0','y0','z0','xd0','yd0','zd0'].forEach(bindHill);
   ['da','dth','di','dW','dq1','dq2'].forEach(bindElem);
   [['A0','A0c'],['alpha','alphac'],['B0','B0c'],['beta0','betac'],['yoff','yoffc'],['xoff','xoffc']].forEach(([k,id])=>bindCW(k,id));
-  ['inc','th0'].forEach(k=>$(k).addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ state.tgt[k]=v; if(state.formation!=='free') enforceFormation(state.mode); writeHill(); writeElem(); writeCW(); recompute(); } }));
+  [['da','dmda'],['dlambda','dmlambda'],['dex','dmex'],['dey','dmey'],['dix','dmix'],['diy','dmiy']].forEach(([k,id])=>bindDamico(k,id));
+  [['emag','dmemag'],['ephase','dmephase'],['imag','dmimag'],['iphase','dmiphase']].forEach(([k,id])=>bindDamicoPolar(k,id));
+  $('dmModeComponents').addEventListener('click',()=>setDamicoVectorMode('components'));
+  $('dmModePolar').addEventListener('click',()=>setDamicoVectorMode('polar'));
+  ['inc','th0'].forEach(k=>$(k).addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ state.tgt[k]=v; if(state.formation!=='free') enforceFormation(state.mode); writeHill(); writeElem(); writeCW(); writeDamico(); recompute(); } }));
   $('inc').value=state.tgt.inc; $('th0').value=state.tgt.th0;
 
   function selectedCaseIndex(){
@@ -704,14 +1122,15 @@
     if(i!==null) Object.assign(state.hill, getCases()[i]);
     if(state.mode==='elem' && i!==null) state.elem=hillToElem(state.hill);
     if(state.mode==='cw' && i!==null) state.cwconst=hillToCWConst(state.hill);
-    writeHill(); writeElem(); writeCW();
+    if(state.mode==='damico' && i!==null) state.damico=hillToDamico(state.hill);
+    writeHill(); writeElem(); writeCW(); writeDamico();
   }
 
   // orbit: n, period, a linked
   const writeOrbit=(skip)=>{ if(skip!=='nin') $('nin').value=Number(n().toPrecision(4)); if(skip!=='period') $('period').value=Number(state.period.toPrecision(5)); if(skip!=='sma') $('sma').value=Number((sma()/1e3).toPrecision(5)); };
-  $('period').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=v; writeOrbit('period'); if(state.formation==='free') refreshSelectedCaseForNewOrbit(); else { enforceFormation(state.mode); writeHill(); writeElem(); writeCW(); } recompute(); } });
-  $('nin').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=2*Math.PI/v/60; writeOrbit('nin'); if(state.formation==='free') refreshSelectedCaseForNewOrbit(); else { enforceFormation(state.mode); writeHill(); writeElem(); writeCW(); } recompute(); } });
-  $('sma').addEventListener('input', e=>{ const v=parseFloat(e.target.value)*1e3; if(v>0){ state.period=2*Math.PI*Math.sqrt(v*v*v/MU)/60; writeOrbit('sma'); if(state.formation==='free') refreshSelectedCaseForNewOrbit(); else { enforceFormation(state.mode); writeHill(); writeElem(); writeCW(); } recompute(); } });
+  $('period').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=v; writeOrbit('period'); if(state.formation==='free') refreshSelectedCaseForNewOrbit(); else { enforceFormation(state.mode); writeHill(); writeElem(); writeCW(); writeDamico(); } recompute(); } });
+  $('nin').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.period=2*Math.PI/v/60; writeOrbit('nin'); if(state.formation==='free') refreshSelectedCaseForNewOrbit(); else { enforceFormation(state.mode); writeHill(); writeElem(); writeCW(); writeDamico(); } recompute(); } });
+  $('sma').addEventListener('input', e=>{ const v=parseFloat(e.target.value)*1e3; if(v>0){ state.period=2*Math.PI*Math.sqrt(v*v*v/MU)/60; writeOrbit('sma'); if(state.formation==='free') refreshSelectedCaseForNewOrbit(); else { enforceFormation(state.mode); writeHill(); writeElem(); writeCW(); writeDamico(); } recompute(); } });
   $('orbits').addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(v>0){ state.orbits=v; recompute(); } });
   $('time').addEventListener('input', e=>{ state.tau=parseFloat(e.target.value); updateReadouts(); draw(); });
   $('showEll').addEventListener('change', e=>{ state.showEll=e.target.checked; draw(); });
@@ -730,18 +1149,21 @@
     if(mode==='hill') state.hill={...Hcur};
     if(mode==='elem') state.elem=hillToElem(Hcur);
     if(mode==='cw') state.cwconst=hillToCWConst(Hcur);
+    if(mode==='damico') state.damico=hillToDamico(Hcur);
     state.mode=mode;
     $('modeHill').setAttribute('aria-pressed', mode==='hill');
     $('modeElem').setAttribute('aria-pressed', mode==='elem');
     $('modeCW').setAttribute('aria-pressed', mode==='cw');
+    $('modeDamico').setAttribute('aria-pressed', mode==='damico');
     $('hillFields').hidden = mode!=='hill';
     $('elemFields').hidden = mode!=='elem';
     $('cwFields').hidden = mode!=='cw';
-    $('hillEq').hidden = mode!=='elem';
-    $('elemEq').hidden = mode==='elem';
-    $('eqHead').textContent = mode==='elem' ? 'Same motion as a Hill-frame state' : 'Same motion in ROEs';
+    $('damicoFields').hidden = mode!=='damico';
+    $('hillEq').hidden = !(mode==='elem' || mode==='damico');
+    $('elemEq').hidden = (mode==='elem' || mode==='damico');
+    $('eqHead').textContent = (mode==='elem' || mode==='damico') ? 'Same motion as a Hill-frame state' : 'Same motion in ROEs';
     if(state.formation!=='free') enforceFormation(mode);
-    writeHill(); writeElem(); writeCW(); updateFormationLocks(); recompute();
+    writeHill(); writeElem(); writeCW(); writeDamico(); updateFormationLocks(); recompute();
   }
   function loadCase(i){
     state.formation='free';
@@ -749,16 +1171,17 @@
     Object.assign(state.hill, getCases()[i]);
     if(state.mode==='elem') state.elem=hillToElem(state.hill);
     if(state.mode==='cw') state.cwconst=hillToCWConst(state.hill);
+    if(state.mode==='damico') state.damico=hillToDamico(state.hill);
     state.tau=0; $('time').value=0;
     document.querySelectorAll('#cases button').forEach((b,j)=>b.setAttribute('aria-pressed', j===i));
-    writeHill(); writeElem(); writeCW(); updateFormationLocks(); recompute();
+    writeHill(); writeElem(); writeCW(); writeDamico(); updateFormationLocks(); recompute();
   }
   document.querySelectorAll('input[name="formation"]').forEach(r=>r.addEventListener('change', e=>{
     if(!e.target.checked) return;
     // First express the current physical trajectory in the active coordinates, then impose the chosen design.
     state.formation=e.target.value;
     enforceFormation(state.mode);
-    writeHill(); writeElem(); writeCW(); updateFormationLocks(); recompute();
+    writeHill(); writeElem(); writeCW(); writeDamico(); updateFormationLocks(); recompute();
   }));
   $('formationSense').addEventListener('change', e=>{
     state.formationSense=parseInt(e.target.value,10)===-1?-1:1;
@@ -768,15 +1191,21 @@
   $('modeHill').addEventListener('click', ()=>setMode('hill'));
   $('modeElem').addEventListener('click', ()=>setMode('elem'));
   $('modeCW').addEventListener('click', ()=>setMode('cw'));
+  $('modeDamico').addEventListener('click', ()=>setMode('damico'));
   if(SHOW_CASES){ getCases().forEach((c,i)=>{ const b=document.createElement('button'); b.textContent='Case '+(i+1); b.addEventListener('click',()=>loadCase(i)); $('cases').appendChild(b); }); }
   else { $('casesHead').remove(); $('cases').remove(); }
 
   // ---------- init ----------
-  new ResizeObserver(draw).observe(canvas.parentElement);
+  const plotResizeObserver=new ResizeObserver(draw);
+  plotResizeObserver.observe(canvas.parentElement);
+  plotResizeObserver.observe(timeCanvas.parentElement);
+  plotResizeObserver.observe(xzCanvas.parentElement);
   writeOrbit();
   writeCW();
+  writeDamico();
+  setDamicoVectorMode(state.damicoVectorMode);
   $('formationSense').value=String(state.formationSense);
-  if(SHOW_CASES) loadCase(0); else { writeHill(); writeElem(); writeCW(); updateFormationLocks(); recompute(); }
+  if(SHOW_CASES) loadCase(0); else { writeHill(); writeElem(); writeCW(); writeDamico(); updateFormationLocks(); recompute(); }
   if(!reduce) setPlaying(true);
 })();
 </script>
